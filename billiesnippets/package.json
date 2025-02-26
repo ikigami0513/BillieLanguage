@@ -1,0 +1,25 @@
+{
+  "name": "billiesnippets",
+  "displayName": "BillieSnippets",
+  "description": "Snippets for Billie Programming Language",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.97.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "billie",
+      "aliases": ["Billie", "billie"],
+      "extensions": [".billie"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "billie",
+      "scopeName": "source.billie",
+      "path": "./syntaxes/billie.tmLanguage.json"
+    }]
+  }
+}

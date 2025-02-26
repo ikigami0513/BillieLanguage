@@ -1,0 +1,6 @@
+const message: string = "Hello World";
+
+function main() -> int32 {
+    print(message);
+    return 0;
+}
