@@ -8,6 +8,7 @@ Additional reference : [Python LLVM Series](https://github.com/CodeDuckers/Pytho
 ## Roadmap
 
 ✅ => Feature present.
+
 ⏳ => Feature being added.
 
 * [✅] Project Setup, Token Class, Lexer Class
