@@ -29,3 +29,13 @@ Additional reference : [Python LLVM Series](https://github.com/CodeDuckers/Pytho
 * [✅] Import Code File
 * [✅] Exporting Billie Programming Language to EXE
 * [⏳] Logical Operator (&& and ||)
+
+
+## Code example
+
+### Hello World
+```billie
+function main() -> int32 {
+    print("Hello, World!");
+    return 0;
+}
