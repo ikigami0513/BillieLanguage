@@ -29,6 +29,7 @@ Additional reference : [Python LLVM Series](https://github.com/CodeDuckers/Pytho
 * [✅] Import Code File
 * [✅] Exporting Billie Programming Language to EXE
 * [⏳] Logical Operator (&& and ||)
+* [] Add more primitives types (int8, int16, int64, int128)
 
 
 ## Code example
