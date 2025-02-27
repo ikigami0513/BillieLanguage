@@ -36,6 +36,10 @@ class TokenType(StrEnum):
     LT_EQ = '<='
     GT_EQ = '>='
 
+    # Logic Symbols
+    AND = 'AND'
+    OR = 'OR'
+
     # Symbols
     COLON = "COLON"
     COMMA = "COMMA"

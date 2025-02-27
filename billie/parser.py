@@ -14,6 +14,8 @@ from billie.ast import FunctionParameter
 # Precedence Types
 class PrecedenceType(Enum):
     P_LOWEST = 0
+    P_LOGICAL_OR = auto()
+    P_LOGICAL_AND = auto()
     P_EQUALS = auto()
     P_LESSGREATER = auto()
     P_SUM = auto()
@@ -40,7 +42,9 @@ PRECEDENCES: dict[TokenType, int] = {
     TokenType.GT_EQ: PrecedenceType.P_LESSGREATER,
     TokenType.LPAREN: PrecedenceType.P_CALL,
     TokenType.PLUS_PLUS: PrecedenceType.P_INDEX,
-    TokenType.MINUS_MINUS: PrecedenceType.P_INDEX
+    TokenType.MINUS_MINUS: PrecedenceType.P_INDEX,
+    TokenType.AND: PrecedenceType.P_LOGICAL_AND,
+    TokenType.OR: PrecedenceType.P_LOGICAL_OR
 }
 
 
@@ -82,7 +86,9 @@ class Parser:
             TokenType.GT_EQ: self.parse_infix_expression,
             TokenType.LPAREN: self.parse_call_expression,
             TokenType.PLUS_PLUS: self.parse_postfix_expression,
-            TokenType.MINUS_MINUS: self.parse_postfix_expression
+            TokenType.MINUS_MINUS: self.parse_postfix_expression,
+            TokenType.AND: self.parse_infix_expression,
+            TokenType.OR: self.parse_infix_expression
         }
 
         # Populate the current_token and peek_token
@@ -323,7 +329,7 @@ class Parser:
 
         if not self.expect_peek(TokenType.LBRACE):
             return None
-        
+
         consequence = self.parse_block_statement()
 
         if self.peek_token_is(TokenType.ELSE):
@@ -331,7 +337,7 @@ class Parser:
 
             if not self.expect_peek(TokenType.LBRACE):
                 return None
-            
+
             alternative = self.parse_block_statement()
 
         return IfStatement(condition=condition, consequence=consequence, alternative=alternative)

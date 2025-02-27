@@ -28,8 +28,10 @@ Additional reference : [Python LLVM Series](https://github.com/CodeDuckers/Pytho
 * [✅] Postfix Operators (i++, i--)
 * [✅] Import Code File
 * [✅] Exporting Billie Programming Language to EXE
-* [⏳] Logical Operator (&& and ||)
-* [] Add more primitives types (int8, int16, int64, int128)
+* [✅] Logical Operator (&& and ||)
+* [⏳] Add more primitives types (int8, int16, int64, int128, double)
+* [] Add Aggregate types (Array, Vector)
+* [] Add Structs and Classes
 
 
 ## Code example

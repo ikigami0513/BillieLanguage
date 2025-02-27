@@ -6,18 +6,13 @@
                 "type": "FunctionStatement",
                 "name": {
                     "type": "IdentifierLiteral",
-                    "value": "add"
+                    "value": "test"
                 },
                 "return_type": "int32",
                 "parameters": [
                     {
                         "type": "FunctionParameter",
-                        "name": "a",
-                        "value_type": "int32"
-                    },
-                    {
-                        "type": "FunctionParameter",
-                        "name": "b",
+                        "name": "n",
                         "value_type": "int32"
                     }
                 ],
@@ -25,17 +20,95 @@
                     "type": "BlockStatement",
                     "statements": [
                         {
+                            "type": "ExpressionStatement",
+                            "expr": {
+                                "type": "IfStatement",
+                                "condition": {
+                                    "type": "InfixExpression",
+                                    "left_node": {
+                                        "type": "IdentifierLiteral",
+                                        "value": "n"
+                                    },
+                                    "operator": "==",
+                                    "right_node": {
+                                        "type": "IntegerLiteral",
+                                        "value": 2
+                                    }
+                                },
+                                "consequence": {
+                                    "type": "BlockStatement",
+                                    "statements": [
+                                        {
+                                            "type": "ReturnStatement",
+                                            "return_value": {
+                                                "type": "IdentifierLiteral",
+                                                "value": "n"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "alternative": null
+                            }
+                        },
+                        {
+                            "type": "ExpressionStatement",
+                            "expr": {
+                                "type": "IfStatement",
+                                "condition": {
+                                    "type": "InfixExpression",
+                                    "left_node": {
+                                        "type": "InfixExpression",
+                                        "left_node": {
+                                            "type": "IdentifierLiteral",
+                                            "value": "n"
+                                        },
+                                        "operator": "==",
+                                        "right_node": {
+                                            "type": "IntegerLiteral",
+                                            "value": 0
+                                        }
+                                    },
+                                    "operator": "||",
+                                    "right_node": {
+                                        "type": "InfixExpression",
+                                        "left_node": {
+                                            "type": "IdentifierLiteral",
+                                            "value": "n"
+                                        },
+                                        "operator": "==",
+                                        "right_node": {
+                                            "type": "IntegerLiteral",
+                                            "value": 1
+                                        }
+                                    }
+                                },
+                                "consequence": {
+                                    "type": "BlockStatement",
+                                    "statements": [
+                                        {
+                                            "type": "ReturnStatement",
+                                            "return_value": {
+                                                "type": "IdentifierLiteral",
+                                                "value": "n"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "alternative": null
+                            }
+                        },
+                        {
                             "type": "ReturnStatement",
                             "return_value": {
                                 "type": "InfixExpression",
                                 "left_node": {
                                     "type": "IdentifierLiteral",
-                                    "value": "a"
+                                    "value": "n"
                                 },
-                                "operator": "+",
+                                "operator": "*",
                                 "right_node": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "b"
+                                    "type": "IntegerLiteral",
+                                    "value": 2
                                 }
                             }
                         }
@@ -61,16 +134,12 @@
                                 "type": "CallExpression",
                                 "function": {
                                     "type": "IdentifierLiteral",
-                                    "value": "add"
+                                    "value": "test"
                                 },
                                 "arguments": [
                                     {
                                         "type": "IntegerLiteral",
-                                        "value": 1
-                                    },
-                                    {
-                                        "type": "IntegerLiteral",
-                                        "value": 2
+                                        "value": 10
                                     }
                                 ]
                             }

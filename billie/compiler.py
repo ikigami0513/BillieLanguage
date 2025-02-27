@@ -388,7 +388,11 @@ class Compiler:
 
         value = None
         Type = None
-        if isinstance(right_type, ir.IntType) and isinstance(left_type, ir.IntType):
+        if operator == '||':
+            value = self.builder.or_(left_value, right_value)
+        elif operator == '&&':
+            value = self.builder.and_(left_value, right_value)
+        elif isinstance(right_type, ir.IntType) and isinstance(left_type, ir.IntType):
             Type = self.type_map['int32']
             match operator:
                 case '+':

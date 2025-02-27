@@ -42,7 +42,9 @@ class Lexer:
             '*=': TokenType.MUL_EQ,
             '/=': TokenType.DIV_EQ,
             '++': TokenType.PLUS_PLUS,
-            '--': TokenType.MINUS_MINUS
+            '--': TokenType.MINUS_MINUS,
+            '&&': TokenType.AND,
+            '||': TokenType.OR
         }
 
         self.current_char: Optional[str] = None

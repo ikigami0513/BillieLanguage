@@ -4,7 +4,7 @@ from billie.compiler import Compiler
 from billie.ast import Program
 import json
 import time
-from argparse import ArgumentParser, Namespace, ArgumentError
+from argparse import ArgumentParser, Namespace
 
 from llvmlite import ir
 import llvmlite.binding as llvm
@@ -22,7 +22,7 @@ def parse_arguments() -> Namespace:
 
 LEXER_DEBUG: bool = False
 PARSER_DEBUG: bool = False
-COMPILER_DEBUG: bool = False
+COMPILER_DEBUG: bool = True
 RUN_CODE: bool = True
 
 PROD_DEBUG: bool = False

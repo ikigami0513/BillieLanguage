@@ -1,20 +1,11 @@
-import "math.billie";
-
-function main() -> int32 {
-    let a: int32 = 0;
-
-    for (let i: int32 = 0; i < 10; i++) {
-        if (i == 1) {
-            print("i + 8: %i\n", add(i, 8));    
-        }
-
-        if (i == 5) {
-            break;    
-        }
-
-        print("i = %i\n", i);
-        a = i;
+function factorial(n: int32) -> int32 {
+    if n == 0 || n == 1 {
+        return 1;    
     }
 
-    return a;
+    return n * factorial(n - 1);
+}
+
+function main() -> int32 {
+    return factorial(5);    
 }
