@@ -1,0 +1,11 @@
+function pi() -> float {
+    return 3.14159265359;
+}
+
+function tau() -> float {
+    return pi() * 2.0;
+}
+
+function e() -> float {
+    return 2.71828182846;
+}

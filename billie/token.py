@@ -18,7 +18,6 @@ class TokenType(StrEnum):
     MINUS = "MINUS"
     ASTERISK = "ASTERISK"
     SLASH = "SLASH"
-    POW = "POW"
     MODULUS = "MODULUS"
 
     # Assignment Symbols
@@ -105,7 +104,8 @@ KEYWORDS: dict[str, TokenType] = {
 }
 
 TYPE_KEYWORDS: list[str] = [
-    "int32", "float", "string", "void"
+    "int32", "float",
+    "string", "void"
 ]
 
 def lookup_ident(ident: str) -> TokenType:

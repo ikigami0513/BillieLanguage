@@ -13,6 +13,8 @@ from billie.environment import Environment
 from billie.lexer import Lexer
 from billie.parser import Parser
 
+from billie import settings
+
 
 class Compiler:
     def __init__(self) -> None:
@@ -359,10 +361,18 @@ class Compiler:
         file_path: str = node.file_path
 
         if self.global_parsed_pallets.get(file_path) is not None:
-            print(f"[Billie Warning] is already imported globally\n")
+            print(f"[Billie Warning] {file_path} is already imported globally\n")
             return
         
-        with open(os.path.abspath(f"tests\\{file_path}"), "r") as f:
+        abs_file_path = ""
+        if os.path.exists(f"{settings.STDLIB_PATH}/{file_path}.billie"):
+            abs_file_path = f"{settings.STDLIB_PATH}/{file_path}.billie"
+        elif os.path.exists(f"{os.path.dirname(os.path.abspath(settings.ENTRY_FILE))}/{file_path}.billie"):
+            abs_file_path = f"{os.path.dirname(os.path.abspath(settings.ENTRY_FILE))}/{file_path}.billie"
+        else:
+            raise FileNotFoundError(f"{file_path}.billie not found.")
+
+        with open(abs_file_path, "r") as f:
             pallet_code: str = f.read()
 
         l = Lexer(source=pallet_code)
@@ -405,9 +415,6 @@ class Compiler:
                     value = self.builder.sdiv(left_value, right_value)
                 case '%':
                     value = self.builder.srem(left_value, right_type)
-                case '^':
-                    # TODO : implement this
-                    pass
                 case '<':
                     value = self.builder.icmp_signed('<', left_value, right_value)
                     Type = ir.IntType(1)
@@ -436,9 +443,6 @@ class Compiler:
                     value = self.builder.fdiv(left_value, right_value)
                 case '%':
                     value = self.builder.frem(left_value, right_value)
-                case '^':
-                    # TODO: Implement this (Having an issue off camera implementing this)
-                    pass
                 case '<':
                     value = self.builder.fcmp_ordered('<', left_value, right_value)
                     Type = ir.IntType(1)
@@ -579,13 +583,18 @@ class Compiler:
         return global_fmt, global_fmt.type
 
     def builtin_printf(self, params: list[ir.Instruction], return_type: ir.Type) -> None:
-        """ Basic C builtin printf """
+        """ Basic C builtin printf with float support """
         func, _ = self.env.lookup('print')
 
         c_str = self.builder.alloca(return_type)
         self.builder.store(params[0], c_str)
 
-        rest_params = params[1:]
+        rest_params = []
+        for param in params[1:]:
+            if isinstance(param.type, ir.FloatType):
+                # Convertit le float en double pour printf
+                param = self.builder.fpext(param, ir.DoubleType())
+            rest_params.append(param)
 
         if isinstance(params[0], ir.LoadInstr):
             """ Printing from a variable load instruction """
@@ -598,5 +607,6 @@ class Compiler:
             """ Printing from a normal string declared within printf """
             fmt_arg = self.builder.bitcast(self.module.get_global(f"__str_{self.counter}"), ir.IntType(8).as_pointer())
             return self.builder.call(func, [fmt_arg, *rest_params])
+
     # endregion Helper Methods
     

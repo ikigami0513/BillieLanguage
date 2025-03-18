@@ -1,0 +1,78 @@
+import "math/constants";
+import "math/algebra";
+import "math/exponentials";
+
+function sin(x: float) -> float {
+    let result: float = x;
+    let term: float = x;
+    let x2: float = x * x;
+
+    for (let i: int32 = 3; i < 15; i += 2) {
+        term *= -x2 / ((i - 1) * i);
+        result += term;
+    }   
+
+    return result;
+}
+
+function cos(x: float) -> float {
+    let result: float = 1.0;
+    let term: float = 1.0;
+    let x2: float = x * x;
+
+    for (let i: int32 = 2; i < 14; i += 2) {
+        term *= -x2 / ((i - 1) * i);
+        result += term;    
+    }
+
+    return result;
+}
+
+function tan(x: float) -> float {
+    return sin(x) / cos(x);    
+}
+
+function deg_to_rad(deg: float) -> float {
+    return deg * (pi() / 180.0);    
+}
+
+function rad_to_deg(rad: float) -> float {
+    return rad * (180.0 / pi());    
+}
+
+function sin_add(a: float, b: float) -> float {
+    return sin(a) * cos(b) + cos(a) * sin(b);    
+}
+
+function cos_add(a: float, b: float ) -> float {
+    return cos(a) * cos(b) - sin(a) * sin(b);    
+}
+
+function tan_add(a: float, b: float) -> float {
+    return (tan(a) + tan(b)) / (1 - tan(a) * tan(b));    
+}
+
+function asin(x: float) -> float {
+    let sum: float = x;
+    let term: float = x;
+    let x2: float = x * x;
+
+    for (let i: int32 = 1; i < 10; i++) {
+        term *= x2 * (2 * i - 1) / (2 * i);
+        sum += term / (2 * i + 1);    
+    }    
+
+    return sum;
+}
+
+function acos(x: float) -> float {
+    return (pi() / 2.0) - asin(x);    
+}
+
+function atan(x: float) -> float {
+    if absf(x) <= 1 {
+        return asin(x / sqrt(1.0 + x * x));    
+    }
+
+    return (pi() / 2.0) - asin(1.0 / sqrt(1.0 + x * x));
+}

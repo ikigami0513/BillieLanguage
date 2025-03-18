@@ -1,0 +1,18 @@
+import "math/algebra";
+
+function sqrt(n: float) -> float {
+    if n < 0.0 {
+        return -1.0;    
+    }    
+
+    let x: float = n;
+    let y: float = 1.0;
+    let epsilon: float = 0.00001;
+
+    while absf(x - y) > epsilon {
+        x = (x + y) / 2.0;
+        y = n / x;    
+    }
+
+    return x;
+}

@@ -6,7 +6,7 @@
                 "type": "FunctionStatement",
                 "name": {
                     "type": "IdentifierLiteral",
-                    "value": "test"
+                    "value": "factorial"
                 },
                 "return_type": "int32",
                 "parameters": [
@@ -26,37 +26,6 @@
                                 "condition": {
                                     "type": "InfixExpression",
                                     "left_node": {
-                                        "type": "IdentifierLiteral",
-                                        "value": "n"
-                                    },
-                                    "operator": "==",
-                                    "right_node": {
-                                        "type": "IntegerLiteral",
-                                        "value": 2
-                                    }
-                                },
-                                "consequence": {
-                                    "type": "BlockStatement",
-                                    "statements": [
-                                        {
-                                            "type": "ReturnStatement",
-                                            "return_value": {
-                                                "type": "IdentifierLiteral",
-                                                "value": "n"
-                                            }
-                                        }
-                                    ]
-                                },
-                                "alternative": null
-                            }
-                        },
-                        {
-                            "type": "ExpressionStatement",
-                            "expr": {
-                                "type": "IfStatement",
-                                "condition": {
-                                    "type": "InfixExpression",
-                                    "left_node": {
                                         "type": "InfixExpression",
                                         "left_node": {
                                             "type": "IdentifierLiteral",
@@ -65,10 +34,10 @@
                                         "operator": "==",
                                         "right_node": {
                                             "type": "IntegerLiteral",
-                                            "value": 0
+                                            "value": 2
                                         }
                                     },
-                                    "operator": "||",
+                                    "operator": "^",
                                     "right_node": {
                                         "type": "InfixExpression",
                                         "left_node": {
@@ -78,7 +47,7 @@
                                         "operator": "==",
                                         "right_node": {
                                             "type": "IntegerLiteral",
-                                            "value": 1
+                                            "value": 2
                                         }
                                     }
                                 },
@@ -88,8 +57,8 @@
                                         {
                                             "type": "ReturnStatement",
                                             "return_value": {
-                                                "type": "IdentifierLiteral",
-                                                "value": "n"
+                                                "type": "IntegerLiteral",
+                                                "value": 1
                                             }
                                         }
                                     ]
@@ -107,8 +76,25 @@
                                 },
                                 "operator": "*",
                                 "right_node": {
-                                    "type": "IntegerLiteral",
-                                    "value": 2
+                                    "type": "CallExpression",
+                                    "function": {
+                                        "type": "IdentifierLiteral",
+                                        "value": "factorial"
+                                    },
+                                    "arguments": [
+                                        {
+                                            "type": "InfixExpression",
+                                            "left_node": {
+                                                "type": "IdentifierLiteral",
+                                                "value": "n"
+                                            },
+                                            "operator": "-",
+                                            "right_node": {
+                                                "type": "IntegerLiteral",
+                                                "value": 1
+                                            }
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -134,12 +120,12 @@
                                 "type": "CallExpression",
                                 "function": {
                                     "type": "IdentifierLiteral",
-                                    "value": "test"
+                                    "value": "factorial"
                                 },
                                 "arguments": [
                                     {
                                         "type": "IntegerLiteral",
-                                        "value": 10
+                                        "value": 2
                                     }
                                 ]
                             }

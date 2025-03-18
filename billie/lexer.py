@@ -15,7 +15,6 @@ class Lexer:
             '-': TokenType.MINUS,
             '*': TokenType.ASTERISK,
             '/': TokenType.SLASH,
-            '^': TokenType.POW,
             '%': TokenType.MODULUS,
             '<': TokenType.LT,
             '>': TokenType.GT,
@@ -28,7 +27,7 @@ class Lexer:
             ')': TokenType.RPAREN,
             '{': TokenType.LBRACE,
             '}': TokenType.RBRACE,
-            '!': TokenType.BANG
+            '!': TokenType.BANG,
         }
 
         self.multi_char_tokens = {

@@ -1,0 +1,37 @@
+function ln(x: float) -> float {
+    if x <= 0.0 {
+        -1.0;    
+    }
+
+    let y: float = (x - 1.0) / (x + 1.0);
+    let result: float = 0.0;
+    let term: float = y;
+    let y2: float = y * y;
+
+    for (let i: int32 = 1; i < 20; i += 2) {
+        result += term / i;
+        term *= y2;
+    }
+
+    return result * 2.0;
+}
+
+function exp(x: float) -> float {
+    let result: float = 1.0;
+    let term: float = 1.0;
+
+    for (let i: int32 = 1; i < 20; i++) {
+        term *= x / i;
+        result += term;    
+    }
+
+    return result;
+}
+
+function log10(x: float) -> float {
+    return ln(x) / ln(10.0);
+}
+
+function log_base(x: float, base: float) {
+    return ln(x) / ln(base);    
+}
