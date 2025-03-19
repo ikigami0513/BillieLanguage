@@ -367,6 +367,8 @@ class Compiler:
         abs_file_path = ""
         if os.path.exists(f"{settings.STDLIB_PATH}/{file_path}.billie"):
             abs_file_path = f"{settings.STDLIB_PATH}/{file_path}.billie"
+        elif os.path.exists(f"{settings.MODULES_PATH}/{file_path}.billie"):
+            abs_file_path = f"{settings.MODULES_PATH}/{file_path}.billie"
         elif os.path.exists(f"{os.path.dirname(os.path.abspath(settings.ENTRY_FILE))}/{file_path}.billie"):
             abs_file_path = f"{os.path.dirname(os.path.abspath(settings.ENTRY_FILE))}/{file_path}.billie"
         else:

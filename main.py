@@ -30,6 +30,7 @@ def load_settings():
     settings.PARSER_DEBUG = debug.get("parser", False)
     settings.COMPILER_DEBUG = debug.get("compiler", False)
     settings.STDLIB_PATH = settings_.get("stdlib_path", settings.STDLIB_PATH)
+    settings.MODULES_PATH = settings_.get("modules_path", settings.MODULES_PATH)
     settings.ENTRY_FILE = settings_.get("entry_file", settings.ENTRY_FILE)
     settings.BUILD_FOLDER = settings_.get("build", {}).get("build_folder", settings.BUILD_FOLDER)
 

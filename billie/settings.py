@@ -4,5 +4,6 @@ PARSER_DEBUG: bool = False
 COMPILER_DEBUG: bool = False
 RUN_CODE: bool = True
 STDLIB_PATH: str = "./stdlib"
+MODULES_PATH: str = "./modules"
 ENTRY_FILE: str = "./main.billie"
 BUILD_FOLDER: str = "./build"

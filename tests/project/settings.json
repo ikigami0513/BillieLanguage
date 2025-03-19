@@ -1,5 +1,6 @@
 {
     "stdlib_path": "../../stdlib",
+    "modules_path": "../../modules",
     "entry_file": "main.billie",
     "debug": {
         "debug_folder": "./debug",

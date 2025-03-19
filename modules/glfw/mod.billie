@@ -1,0 +1,1 @@
+extern "glfw" function glfwInit() -> bool;
