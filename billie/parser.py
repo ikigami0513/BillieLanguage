@@ -383,9 +383,14 @@ class Parser:
         
         self.next_token() # Skip ;
 
-        stmt.action = self.parse_expression(PrecedenceType.P_LOWEST)
+        if self.peek_token_is_assignement():
+            # i += 1 or i = i + 1
+            stmt.action = self.parse_assignment_statement()
+        else:
+            # i++
+            stmt.action = self.parse_expression(PrecedenceType.P_LOWEST)
         
-        self.next_token()
+            self.next_token()
 
         if not self.expect_peek(TokenType.LBRACE):
             return None

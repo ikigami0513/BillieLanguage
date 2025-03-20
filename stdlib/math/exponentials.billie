@@ -1,14 +1,19 @@
+// Importing algebraic functions from the math library
 import "math/algebra";
 
+// Function to compute the square root of a given number using the Babylonian method
 function sqrt(n: float) -> float {
+    // Return -1.0 for negative numbers, as square root is undefined in real numbers
     if n < 0.0 {
         return -1.0;    
     }    
 
+    // Initial guesses for the square root approximation
     let x: float = n;
     let y: float = 1.0;
     let epsilon: float = 0.00001;
 
+    // Iterate until the approximation is within the defined precision
     while absf(x - y) > epsilon {
         x = (x + y) / 2.0;
         y = n / x;    

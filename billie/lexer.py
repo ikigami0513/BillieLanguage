@@ -74,6 +74,24 @@ class Lexer:
             
             self.read_char()
 
+    def skip_comment(self) -> None:
+        """ Skips over single-line and multi-line comments """
+        if self.current_char == '/' and self.peek_char() == '/':
+            while self.current_char is not None and self.current_char != '\n':
+                self.read_char()
+            self.read_char()
+        elif self.current_char == '/' and self.peek_char() == '*':
+            self.read_char()  # Consume '*'
+            self.read_char()
+            while self.current_char is not None:
+                if self.current_char == '*' and self.peek_char() == '/':
+                    self.read_char()  # Consume '*'
+                    self.read_char()  # Consume '/'
+                    break
+                if self.current_char == '\n':
+                    self.line_no += 1
+                self.read_char()
+
     def new_token(self, tt: TokenType, literal: Any) -> Token:
         """ Creates and returns a new token from specified values """
         return Token(type=tt, literal=literal, line_no=self.line_no, position=self.position)
@@ -127,39 +145,43 @@ class Lexer:
 
     def next_token(self) -> list[Token]:
         """ Main function for executing the Lexer """
-        self.skip_whitespace()
+        while True:
+            self.skip_whitespace()
+            if self.current_char is None:
+                return self.new_token(TokenType.EOF, "")
+            
+            if self.current_char == '/' and self.peek_char() in ('/', '*'):
+                self.skip_comment()
+                continue  # Restart the loop to re-skip spaces if needed
+            
+            # Checking multi-character tokens (==, !=, etc.)
+            two_char_seq = self.current_char + (self.peek_char() or "")
+            if two_char_seq in self.multi_char_tokens:
+                token = self.new_token(self.multi_char_tokens[two_char_seq], two_char_seq)
+                self.read_char()  # Read the second character too
+                self.read_char()
+                return token
+            
+            # Checking simple tokens
+            if self.current_char in self.token_map:
+                if self.current_char == '"':
+                    token = self.new_token(self.token_map[self.current_char], self.read_string())
+                else:
+                    token = self.new_token(self.token_map[self.current_char], self.current_char)
+                self.read_char()
+                return token
+            
+            if self.is_letter(self.current_char):  # Check identifier
+                literal: str = self.read_identifier()
+                tt: TokenType = lookup_ident(literal)
+                tok = self.new_token(tt=tt, literal=literal)
+                return tok
 
-        if self.current_char is None:
-            return self.new_token(TokenType.EOF, "")
-        
-        # Checking multi-character tokens (==, !=, etc.)
-        two_char_seq = self.current_char + (self.peek_char() or "")
-        if two_char_seq in self.multi_char_tokens:
-            token = self.new_token(self.multi_char_tokens[two_char_seq], two_char_seq)
-            self.read_char()  # Read the second character too
+            if self.is_digit(self.current_char):  # Check number
+                return self.read_number()
+            
+            # Unknown token
+            token = self.new_token(TokenType.ILLEGAL, self.current_char)
             self.read_char()
             return token
         
-        # Checking simple tokens
-        if self.current_char in self.token_map:
-            if self.current_char == '"':
-                token = self.new_token(self.token_map[self.current_char], self.read_string())
-            else:
-                token = self.new_token(self.token_map[self.current_char], self.current_char)
-            self.read_char()
-            return token
-        
-        if self.is_letter(self.current_char):  # Check identifier
-            literal: str = self.read_identifier()
-            tt: TokenType = lookup_ident(literal)
-            tok = self.new_token(tt=tt, literal=literal)
-            return tok
-
-        if self.is_digit(self.current_char):  # Check number
-            return self.read_number()
-        
-        # Unknown token
-        token = self.new_token(TokenType.ILLEGAL, self.current_char)
-        self.read_char()
-        return token
-    

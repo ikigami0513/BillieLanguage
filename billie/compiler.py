@@ -19,7 +19,7 @@ from billie import settings
 class Compiler:
     def __init__(self) -> None:
         self.type_map: dict[str, ir.Type] = {
-            'int32': ir.IntType(32),
+            'int': ir.IntType(64),
             'float': ir.FloatType(),
             'bool': ir.IntType(1),
             'void': ir.VoidType(),
@@ -54,7 +54,7 @@ class Compiler:
     def initialize_builtins(self):
         def init_print() -> ir.Function:
             fnty: ir.FunctionType = ir.FunctionType(
-                self.type_map['int32'],
+                self.type_map['int'],
                 [ir.IntType(8).as_pointer()],
                 var_arg=True
             )
@@ -361,7 +361,7 @@ class Compiler:
         file_path: str = node.file_path
 
         if self.global_parsed_pallets.get(file_path) is not None:
-            print(f"[Billie Warning] {file_path} is already imported globally\n")
+            # print(f"[Billie Warning] {file_path} is already imported globally\n")
             return
         
         abs_file_path = ""
@@ -400,68 +400,62 @@ class Compiler:
 
         value = None
         Type = None
+        
+        # Gestion des opérateurs logiques
         if operator == '||':
             value = self.builder.or_(left_value, right_value)
         elif operator == '&&':
             value = self.builder.and_(left_value, right_value)
-        elif isinstance(right_type, ir.IntType) and isinstance(left_type, ir.IntType):
-            Type = self.type_map['int32']
-            match operator:
-                case '+':
-                    value = self.builder.add(left_value, right_value)
-                case '-':
-                    value = self.builder.sub(left_value, right_value)
-                case '*':
-                    value = self.builder.mul(left_value, right_value)
-                case '/':
-                    value = self.builder.sdiv(left_value, right_value)
-                case '%':
-                    value = self.builder.srem(left_value, right_type)
-                case '<':
-                    value = self.builder.icmp_signed('<', left_value, right_value)
+        
+        # Gestion des opérations arithmétiques et comparaisons
+        else:
+            is_left_float = isinstance(left_type, ir.FloatType)
+            is_right_float = isinstance(right_type, ir.FloatType)
+            is_left_int = isinstance(left_type, ir.IntType)
+            is_right_int = isinstance(right_type, ir.IntType)
+            
+            # Upcast des int en float si nécessaire
+            if is_left_int and is_right_float:
+                left_value = self.builder.sitofp(left_value, right_type)
+                left_type = right_type
+            elif is_right_int and is_left_float:
+                right_value = self.builder.sitofp(right_value, left_type)
+                right_type = left_type
+            
+            if isinstance(left_type, ir.IntType) and isinstance(right_type, ir.IntType):
+                Type = self.type_map['int']
+                match operator:
+                    case '+': value = self.builder.add(left_value, right_value)
+                    case '-': value = self.builder.sub(left_value, right_value)
+                    case '*': value = self.builder.mul(left_value, right_value)
+                    case '/': value = self.builder.sdiv(left_value, right_value)
+                    case '%': value = self.builder.srem(left_value, right_value)
+                    case '<': value = self.builder.icmp_signed('<', left_value, right_value)
+                    case '<=': value = self.builder.icmp_signed('<=', left_value, right_value)
+                    case '>': value = self.builder.icmp_signed('>', left_value, right_value)
+                    case '>=': value = self.builder.icmp_signed('>=', left_value, right_value)
+                    case '==': value = self.builder.icmp_signed('==', left_value, right_value)
+                if operator in ('<', '<=', '>', '>=', '=='):
                     Type = ir.IntType(1)
-                case '<=':
-                    value = self.builder.icmp_signed('<=', left_value, right_value)
+            
+            elif isinstance(left_type, ir.FloatType) and isinstance(right_type, ir.FloatType):
+                Type = ir.FloatType()
+                match operator:
+                    case '+': value = self.builder.fadd(left_value, right_value)
+                    case '-': value = self.builder.fsub(left_value, right_value)
+                    case '*': value = self.builder.fmul(left_value, right_value)
+                    case '/': value = self.builder.fdiv(left_value, right_value)
+                    case '%': value = self.builder.frem(left_value, right_value)
+                    case '<': value = self.builder.fcmp_ordered('<', left_value, right_value)
+                    case '<=': value = self.builder.fcmp_ordered('<=', left_value, right_value)
+                    case '>': value = self.builder.fcmp_ordered('>', left_value, right_value)
+                    case '>=': value = self.builder.fcmp_ordered('>=', left_value, right_value)
+                    case '==': value = self.builder.fcmp_ordered('==', left_value, right_value)
+                if operator in ('<', '<=', '>', '>=', '=='):
                     Type = ir.IntType(1)
-                case '>':
-                    value = self.builder.icmp_signed('>', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '>=':
-                    value = self.builder.icmp_signed('>=', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '==':
-                    value = self.builder.icmp_signed('==', left_value, right_value)
-                    Type = ir.IntType(1)
-        elif isinstance(right_type, ir.FloatType) and isinstance(left_type, ir.FloatType):
-            Type = ir.FloatType()
-            match operator:
-                case '+':
-                    value = self.builder.fadd(left_value, right_value)
-                case '-':
-                    value = self.builder.fsub(left_value, right_value)
-                case '*':
-                    value = self.builder.fmul(left_value, right_value)
-                case '/':
-                    value = self.builder.fdiv(left_value, right_value)
-                case '%':
-                    value = self.builder.frem(left_value, right_value)
-                case '<':
-                    value = self.builder.fcmp_ordered('<', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '<=':
-                    value = self.builder.fcmp_ordered('<=', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '>':
-                    value = self.builder.fcmp_ordered('>', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '>=':
-                    value = self.builder.fcmp_ordered('>=', left_value, right_value)
-                    Type = ir.IntType(1)
-                case '==':
-                    value = self.builder.fcmp_ordered('==', left_value, right_value)
-                    Type = ir.IntType(1)
-                
+            
         return value, Type
+
     
     def visit_call_expression(self, node: CallExpression) -> tuple[ir.Instruction, ir.Type]:
         name: str = node.function.value
@@ -478,7 +472,7 @@ class Compiler:
         match name:
             case 'print':
                 ret = self.builtin_printf(params=args, return_type=types[0])
-                ret_type = self.type_map['int32']
+                ret_type = self.type_map['int']
             case _:
                 func, ret_type = self.env.lookup(name)
                 ret = self.builder.call(func, args)
@@ -504,7 +498,7 @@ class Compiler:
             Type = ir.IntType(32)
             match operator:
                 case '-':
-                    value = self.builder.mul(right_value, ir.Constant(ir.IntType(32), -1))
+                    value = self.builder.mul(right_value, ir.Constant(ir.IntType(64), -1))
                 case '!':
                     value = self.builder.not_(right_value)
 
@@ -525,12 +519,12 @@ class Compiler:
         match operator:
             case "++":
                 if isinstance(orig_value.type, ir.IntType):
-                    value = self.builder.add(orig_value, ir.Constant(ir.IntType(32), 1))
+                    value = self.builder.add(orig_value, ir.Constant(ir.IntType(64), 1))
                 elif isinstance(orig_value.type, ir.FloatType):
                     value = self.builder.fadd(orig_value, ir.Constant(ir.FloatType(), 1.0))
             case "--":
                 if isinstance(orig_value.type, ir.IntType):
-                    value = self.builder.sub(orig_value, ir.Constant(ir.IntType(32), 1))
+                    value = self.builder.sub(orig_value, ir.Constant(ir.IntType(64), 1))
                 elif isinstance(orig_value.type, ir.FloatType):
                     value = self.builder.fsub(orig_value, ir.Constant(ir.FloatType(), 1.0))
 
@@ -544,7 +538,7 @@ class Compiler:
             # Literals
             case NodeType.IntegerLiteral:
                 node: IntegerLiteral = node
-                value, Type = node.value, self.type_map['int32' if value_type is None else value_type]
+                value, Type = node.value, self.type_map['int' if value_type is None else value_type]
                 return ir.Constant(Type, value), Type
             case NodeType.FloatLiteral:
                 node: FloatLiteral = node

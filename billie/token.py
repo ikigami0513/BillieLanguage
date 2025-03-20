@@ -104,8 +104,9 @@ KEYWORDS: dict[str, TokenType] = {
 }
 
 TYPE_KEYWORDS: list[str] = [
-    "int32", "float",
-    "string", "void"
+    "int", "float",
+    "string", "void",
+    "bool"
 ]
 
 def lookup_ident(ident: str) -> TokenType:

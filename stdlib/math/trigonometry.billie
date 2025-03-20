@@ -1,78 +1,95 @@
+// Import necessary math libraries for constants, algebra, and exponentials
 import "math/constants";
 import "math/algebra";
 import "math/exponentials";
 
+// Function to compute the sine of x using its series expansion
 function sin(x: float) -> float {
-    let result: float = x;
-    let term: float = x;
-    let x2: float = x * x;
+    let result: float = x;  // Initialize result with the first term in the series (x)
+    let term: float = x;    // Initialize the first term in the series
+    let x2: float = x * x;  // Pre-calculate x^2 for use in the series
 
-    for (let i: int32 = 3; i < 15; i += 2) {
-        term *= -x2 / ((i - 1) * i);
-        result += term;
+    // Iterate through the series expansion for sine: sin(x) = x - x^3 / 3! + x^5 / 5! - ...
+    for (let i: int = 3; i < 15; i += 2) {
+        term *= -x2 / ((i - 1) * i);  // Update the term based on the series formula
+        result += term;  // Add the current term to the result
     }   
 
-    return result;
+    return result;  // Return the final computed sine value
 }
 
+// Function to compute the cosine of x using its series expansion
 function cos(x: float) -> float {
-    let result: float = 1.0;
-    let term: float = 1.0;
-    let x2: float = x * x;
+    let result: float = 1.0;  // Initialize result with the first term in the series (1)
+    let term: float = 1.0;    // Initialize the first term in the series
+    let x2: float = x * x;    // Pre-calculate x^2 for use in the series
 
-    for (let i: int32 = 2; i < 14; i += 2) {
-        term *= -x2 / ((i - 1) * i);
-        result += term;    
+    // Iterate through the series expansion for cosine: cos(x) = 1 - x^2 / 2! + x^4 / 4! - ...
+    for (let i: int = 2; i < 14; i += 2) {
+        term *= -x2 / ((i - 1) * i);  // Update the term based on the series formula
+        result += term;  // Add the current term to the result
     }
 
-    return result;
+    return result;  // Return the final computed cosine value
 }
 
+// Function to compute the tangent of x as sin(x) / cos(x)
 function tan(x: float) -> float {
-    return sin(x) / cos(x);    
+    return sin(x) / cos(x);  // Return the ratio of sine to cosine
 }
 
+// Function to convert degrees to radians
 function deg_to_rad(deg: float) -> float {
-    return deg * (pi() / 180.0);    
+    return deg * (pi() / 180.0);  // Multiply degrees by the conversion factor (π/180)
 }
 
+// Function to convert radians to degrees
 function rad_to_deg(rad: float) -> float {
-    return rad * (180.0 / pi());    
+    return rad * (180.0 / pi());  // Multiply radians by the conversion factor (180/π)
 }
 
+// Function to compute sin(a + b) using the sine addition formula
 function sin_add(a: float, b: float) -> float {
-    return sin(a) * cos(b) + cos(a) * sin(b);    
+    return sin(a) * cos(b) + cos(a) * sin(b);  // sin(a + b) = sin(a)cos(b) + cos(a)sin(b)
 }
 
-function cos_add(a: float, b: float ) -> float {
-    return cos(a) * cos(b) - sin(a) * sin(b);    
+// Function to compute cos(a + b) using the cosine addition formula
+function cos_add(a: float, b: float) -> float {
+    return cos(a) * cos(b) - sin(a) * sin(b);  // cos(a + b) = cos(a)cos(b) - sin(a)sin(b)
 }
 
+// Function to compute tan(a + b) using the tangent addition formula
 function tan_add(a: float, b: float) -> float {
-    return (tan(a) + tan(b)) / (1 - tan(a) * tan(b));    
+    return (tan(a) + tan(b)) / (1 - tan(a) * tan(b));  // tan(a + b) = (tan(a) + tan(b)) / (1 - tan(a)tan(b))
 }
 
+// Function to compute the inverse sine (asin) of x using a series expansion
 function asin(x: float) -> float {
-    let sum: float = x;
-    let term: float = x;
-    let x2: float = x * x;
+    let sum: float = x;  // Initialize sum with the first term in the series (x)
+    let term: float = x;  // Initialize the first term
+    let x2: float = x * x;  // Pre-calculate x^2 for use in the series
 
-    for (let i: int32 = 1; i < 10; i++) {
-        term *= x2 * (2 * i - 1) / (2 * i);
-        sum += term / (2 * i + 1);    
+    // Iterate through the series expansion for inverse sine: asin(x) = x + (1 * 3 * x^3) / 3! + ...
+    for (let i: int = 1; i < 10; i++) {
+        term *= x2 * (2 * i - 1) / (2 * i);  // Update the term based on the series formula
+        sum += term / (2 * i + 1);  // Add the current term to the sum
     }    
 
-    return sum;
+    return sum;  // Return the final computed inverse sine value
 }
 
+// Function to compute the inverse cosine (acos) of x as π/2 - asin(x)
 function acos(x: float) -> float {
-    return (pi() / 2.0) - asin(x);    
+    return (pi() / 2.0) - asin(x);  // acos(x) = π/2 - asin(x)
 }
 
+// Function to compute the inverse tangent (atan) of x
 function atan(x: float) -> float {
+    // If |x| is less than or equal to 1, use the asin formula
     if absf(x) <= 1 {
-        return asin(x / sqrt(1.0 + x * x));    
+        return asin(x / sqrt(1.0 + x * x));  // atan(x) = asin(x / sqrt(1 + x^2))
     }
 
-    return (pi() / 2.0) - asin(1.0 / sqrt(1.0 + x * x));
+    // Otherwise, use the formula for large x values
+    return (pi() / 2.0) - asin(1.0 / sqrt(1.0 + x * x));  // atan(x) = π/2 - asin(1 / sqrt(1 + x^2))
 }

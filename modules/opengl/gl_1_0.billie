@@ -1,0 +1,5 @@
+extern "opengl" function glTexParameterfv(): void;
+extern "opengl" function glTexParameteriv(): void;
+extern "opengl" function glTexImage1D(): void;
+extern "opengl" function glTexImage2D(): void;
+extern "opengl" function glGetBooleanv(): void;

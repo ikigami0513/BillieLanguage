@@ -1,37 +1,50 @@
+// Function to compute the natural logarithm (ln) of a number
 function ln(x: float) -> float {
+    // If the input is less than or equal to zero, return an error value (-1)
     if x <= 0.0 {
         -1.0;    
     }
 
+    // Calculate the ratio (x - 1) / (x + 1), which will be used for the series expansion
     let y: float = (x - 1.0) / (x + 1.0);
-    let result: float = 0.0;
-    let term: float = y;
-    let y2: float = y * y;
+    let result: float = 0.0;  // The result of the logarithm
+    let term: float = y;      // The first term in the series
+    let y2: float = y * y;    // y^2, used to update terms in the series
 
-    for (let i: int32 = 1; i < 20; i += 2) {
-        result += term / i;
-        term *= y2;
+    // Iterate through the series expansion for the natural logarithm
+    // The series is based on the expansion of ln((1 + y) / (1 - y))
+    for (let i: int = 1; i < 20; i += 2) {
+        result += term / i;  // Add the current term divided by i to the result
+        term *= y2;          // Update the term to the next term in the series (multiply by y^2)
     }
 
+    // Multiply the result by 2, as the series expansion requires this factor
     return result * 2.0;
 }
 
+// Function to compute the exponential of a number (e^x)
 function exp(x: float) -> float {
-    let result: float = 1.0;
-    let term: float = 1.0;
+    let result: float = 1.0;  // Start with the first term (1) in the exponential series
+    let term: float = 1.0;    // Initialize the first term
 
-    for (let i: int32 = 1; i < 20; i++) {
-        term *= x / i;
-        result += term;    
+    // Iterate through the series expansion for the exponential function
+    // The series is e^x = 1 + x + x^2 / 2! + x^3 / 3! + ...
+    for (let i: int = 1; i < 20; i++) {
+        term *= x / i;   // Calculate the next term by multiplying the previous term by x/i
+        result += term;   // Add the new term to the result
     }
 
-    return result;
+    return result;  // Return the final result of the exponential
 }
 
+// Function to compute the logarithm of x with base 10
 function log10(x: float) -> float {
+    // Use the natural logarithm (ln) and divide by ln(10) to compute log10(x)
     return ln(x) / ln(10.0);
 }
 
-function log_base(x: float, base: float) {
+// Function to compute the logarithm of x with any arbitrary base
+function log_base(x: float, base: float) -> float {
+    // Use the natural logarithm (ln) and divide by ln(base) to compute log_base(x)
     return ln(x) / ln(base);    
 }

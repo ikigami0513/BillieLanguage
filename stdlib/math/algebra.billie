@@ -1,20 +1,30 @@
-function powi(n: int32, exponent: int32) -> int32 {
-    let result: int32 = 1;
-    for (let i: int32 = 0; i < exponent; i++) {
+// Function to compute integer exponentiation (n ^ exponent)
+function powi(n: int, exponent: int) -> int {
+    let result: int = 1;
+
+    // Loop exponent times, multiplying result by n each iteration
+    for (let i: int = 0; i < exponent; i++) {
         result *= n;    
     }
+
     return result;
 }
 
-function powf(f: float, exponent: int32) -> float {
+// Function to compute floating-point exponentiation (f ^ exponent)
+function powf(f: float, exponent: int) -> float {
     let result: float = 1.0;
-    for (let i: int32 = 0; i < exponent; i++) {
+
+    // Loop exponent times, multiplying result by f each iteration
+    for (let i: int = 0; i < exponent; i++) {
         result *= f;   
     }
+
     return result;
 }
 
-function absi(n: int32) -> int32 {
+// Function to compute the absolute value of an integer
+function absi(n: int) -> int {
+    // If n is negative, return its positive counterpart
     if n < 0 {
         return -n;
     }
@@ -22,7 +32,9 @@ function absi(n: int32) -> int32 {
     return n;
 }
 
+// Function to compute the absolute value of a floating-point number
 function absf(f: float) -> float {
+    // If f is negative, return its positive counterpart
     if f < 0.0 {
         return -f;    
     }    

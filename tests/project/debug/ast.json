@@ -2,12 +2,6 @@
     "type": "Program",
     "statements": [
         {
-            "ImportStatement": {
-                "type": "ImportStatement",
-                "file_path": "math"
-            }
-        },
-        {
             "FunctionStatement": {
                 "type": "FunctionStatement",
                 "name": {
@@ -19,72 +13,6 @@
                 "body": {
                     "type": "BlockStatement",
                     "statements": [
-                        {
-                            "type": "ExpressionStatement",
-                            "expr": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "print"
-                                },
-                                "arguments": [
-                                    {
-                                        "type": "StringLiteral",
-                                        "value": "%i\\n"
-                                    },
-                                    {
-                                        "type": "CallExpression",
-                                        "function": {
-                                            "type": "IdentifierLiteral",
-                                            "value": "powi"
-                                        },
-                                        "arguments": [
-                                            {
-                                                "type": "IntegerLiteral",
-                                                "value": 2
-                                            },
-                                            {
-                                                "type": "IntegerLiteral",
-                                                "value": 4
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "type": "ExpressionStatement",
-                            "expr": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "print"
-                                },
-                                "arguments": [
-                                    {
-                                        "type": "StringLiteral",
-                                        "value": "%f\\n"
-                                    },
-                                    {
-                                        "type": "CallExpression",
-                                        "function": {
-                                            "type": "IdentifierLiteral",
-                                            "value": "powf"
-                                        },
-                                        "arguments": [
-                                            {
-                                                "type": "FloatLiteral",
-                                                "value": 2.5
-                                            },
-                                            {
-                                                "type": "IntegerLiteral",
-                                                "value": 4
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
                         {
                             "type": "ExpressionStatement",
                             "expr": {

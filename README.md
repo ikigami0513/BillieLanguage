@@ -29,7 +29,9 @@ Additional reference : [Python LLVM Series](https://github.com/CodeDuckers/Pytho
 * [✅] Import Code File
 * [✅] Exporting Billie Programming Language to EXE
 * [✅] Logical Operator (&& and ||)
-* [⏳] Add more primitives types (int8, int16, int64, int128, double)
+* [✅] Add stdlib and math module
+* [✅] Add single-line and multi-line comments
+* [⏳] Add constants
 * [] Add Aggregate types (Array, Vector)
 * [] Add Structs and Classes
 
@@ -38,7 +40,7 @@ Additional reference : [Python LLVM Series](https://github.com/CodeDuckers/Pytho
 
 ### Hello World
 ```billie
-function main() -> int32 {
+function main() -> int {
     print("Hello, World!");
     return 0;
 }
