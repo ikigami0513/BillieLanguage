@@ -31,7 +31,7 @@ Additional reference : [Python LLVM Series](https://github.com/CodeDuckers/Pytho
 * [✅] Logical Operator (&& and ||)
 * [✅] Add stdlib and math module
 * [✅] Add single-line and multi-line comments
-* [⏳] Add constants
+* [✅] Add constants
 * [] Add Aggregate types (Array, Vector)
 * [] Add Structs and Classes
 
