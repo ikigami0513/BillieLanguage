@@ -2,7 +2,7 @@ from llvmlite import ir
 import os
 
 from billie.ast import Node, NodeType, Program, Expression
-from billie.ast import ExpressionStatement, LetStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
+from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
 from billie.ast import WhileStatement, ContinueStatement, BreakStatement, ForStatement, ImportStatement
 from billie.ast import InfixExpression, CallExpression, PrefixExpression, PostfixExpression
 from billie.ast import IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral, StringLiteral
@@ -94,6 +94,8 @@ class Compiler:
                 self.visit_expression_statement(node)
             case NodeType.LetStatement:
                 self.visit_let_statement(node)
+            case NodeType.ConstStatement:
+                self.visit_const_statement(node)
             case NodeType.FunctionStatement:
                 self.visit_function_statement(node)
             case NodeType.BlockStatement:
@@ -153,6 +155,21 @@ class Compiler:
         else:
             ptr, _ = self.env.lookup(name)
             self.builder.store(value, ptr)
+
+    def visit_const_statement(self, node: ConstStatement) -> None:
+        name: str = node.name.value
+        value: Expression = node.value
+        value_type: str = node.value_type
+
+        value_, Type = self.resolve_value(node=value)
+        const_var = ir.GlobalVariable(self.module, Type, name)
+        const_var.initializer = ir.Constant(Type, value.value)
+        const_var.global_constant = True
+
+        if self.env.lookup(name) is None:
+            self.env.define(name, const_var, Type)
+        else:
+            raise ValueError(f"Constant '{name}' already defined in the environment.")
 
     def visit_block_statement(self, node: BlockStatement) -> None:
         for stmt in node.statements:

@@ -40,12 +40,12 @@ function tan(x: float) -> float {
 
 // Function to convert degrees to radians
 function deg_to_rad(deg: float) -> float {
-    return deg * (pi() / 180.0);  // Multiply degrees by the conversion factor (π/180)
+    return deg * (pi / 180.0);  // Multiply degrees by the conversion factor (π/180)
 }
 
 // Function to convert radians to degrees
 function rad_to_deg(rad: float) -> float {
-    return rad * (180.0 / pi());  // Multiply radians by the conversion factor (180/π)
+    return rad * (180.0 / pi);  // Multiply radians by the conversion factor (180/π)
 }
 
 // Function to compute sin(a + b) using the sine addition formula
@@ -80,7 +80,7 @@ function asin(x: float) -> float {
 
 // Function to compute the inverse cosine (acos) of x as π/2 - asin(x)
 function acos(x: float) -> float {
-    return (pi() / 2.0) - asin(x);  // acos(x) = π/2 - asin(x)
+    return (pi / 2.0) - asin(x);  // acos(x) = π/2 - asin(x)
 }
 
 // Function to compute the inverse tangent (atan) of x
@@ -91,5 +91,5 @@ function atan(x: float) -> float {
     }
 
     // Otherwise, use the formula for large x values
-    return (pi() / 2.0) - asin(1.0 / sqrt(1.0 + x * x));  // atan(x) = π/2 - asin(1 / sqrt(1 + x^2))
+    return (pi / 2.0) - asin(1.0 / sqrt(1.0 + x * x));  // atan(x) = π/2 - asin(1 / sqrt(1 + x^2))
 }

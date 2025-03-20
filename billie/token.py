@@ -58,6 +58,7 @@ class TokenType(StrEnum):
 
     # Keywords
     LET = "LET"
+    CONST = "CONST"
     FUNCTION = "FUNCTION"
     RETURN = "RETURN"
     IF = "IF"
@@ -90,6 +91,7 @@ class Token:
 
 KEYWORDS: dict[str, TokenType] = {
     "let": TokenType.LET,
+    "const": TokenType.CONST,
     "function": TokenType.FUNCTION,
     "return": TokenType.RETURN,
     "if": TokenType.IF,

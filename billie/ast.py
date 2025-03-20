@@ -123,6 +123,24 @@ class LetStatement(Statement):
         }
     
 
+class ConstStatement(Statement):
+    def __init__(self, name: Expression = None, value: Expression = None, value_type: str = None) -> None:
+        self.name = name
+        self.value = value
+        self.value_type = value_type
+
+    def type(self) -> NodeType:
+        return NodeType.ConstStatement
+    
+    def json(self) -> dict:
+        return {
+            "type": self.type().value,
+            "name": self.name.json(),
+            "value": self.value.json(),
+            "value_type": self.value_type
+        }
+    
+
 class BlockStatement(Statement):
     def __init__(self, statements: list[Statement] = None) -> None:
         self.statements = statements if statements is not None else []

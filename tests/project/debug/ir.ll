@@ -98,26 +98,9 @@ absf_entry.endif:
   ret float %".11"
 }
 
-define float @"pi"()
-{
-pi_entry:
-  ret float 0x400921fb60000000
-}
-
-define float @"tau"()
-{
-tau_entry:
-  %".2" = call float @"pi"()
-  %".3" = fmul float %".2", 0x4000000000000000
-  ret float %".3"
-}
-
-define float @"e"()
-{
-e_entry:
-  ret float 0x4005bf0a80000000
-}
-
+@"pi" = constant float 0x400921fb60000000
+@"tau" = constant float 0x401921fb60000000
+@"e" = constant float 0x4005bf0a80000000
 define float @"sqrt"(float %".1")
 {
 sqrt_entry:
@@ -394,7 +377,7 @@ deg_to_rad_entry:
   %".3" = alloca float
   store float %".1", float* %".3"
   %".5" = load float, float* %".3"
-  %".6" = call float @"pi"()
+  %".6" = load float, float* @"pi"
   %".7" = fdiv float %".6", 0x4066800000000000
   %".8" = fmul float %".5", %".7"
   ret float %".8"
@@ -406,7 +389,7 @@ rad_to_deg_entry:
   %".3" = alloca float
   store float %".1", float* %".3"
   %".5" = load float, float* %".3"
-  %".6" = call float @"pi"()
+  %".6" = load float, float* @"pi"
   %".7" = fdiv float 0x4066800000000000, %".6"
   %".8" = fmul float %".5", %".7"
   ret float %".8"
@@ -535,7 +518,7 @@ define float @"acos"(float %".1")
 acos_entry:
   %".3" = alloca float
   store float %".1", float* %".3"
-  %".5" = call float @"pi"()
+  %".5" = load float, float* @"pi"
   %".6" = fdiv float %".5", 0x4000000000000000
   %".7" = load float, float* %".3"
   %".8" = call float @"asin"(float %".7")
@@ -564,7 +547,7 @@ atan_entry.if:
   %".17" = call float @"asin"(float %".16")
   ret float %".17"
 atan_entry.endif:
-  %".19" = call float @"pi"()
+  %".19" = load float, float* @"pi"
   %".20" = fdiv float %".19", 0x4000000000000000
   %".21" = load float, float* %".3"
   %".22" = load float, float* %".3"
@@ -602,11 +585,18 @@ factorial_entry.endif:
 define i64 @"main"()
 {
 main_entry:
-  %".2" = alloca [14 x i8]*
-  store [14 x i8]* @"__str_9", [14 x i8]** %".2"
-  %".4" = bitcast [14 x i8]* @"__str_9" to i8*
-  %".5" = call i64 (i8*, ...) @"printf"(i8* %".4")
+  %".2" = load float, float* @"pi"
+  %".3" = alloca [5 x i8]*
+  store [5 x i8]* @"__str_9", [5 x i8]** %".3"
+  %".5" = fpext float %".2" to double
+  %".6" = bitcast [5 x i8]* @"__str_9" to i8*
+  %".7" = call i64 (i8*, ...) @"printf"(i8* %".6", double %".5")
+  %".8" = alloca [14 x i8]*
+  store [14 x i8]* @"__str_10", [14 x i8]** %".8"
+  %".10" = bitcast [14 x i8]* @"__str_10" to i8*
+  %".11" = call i64 (i8*, ...) @"printf"(i8* %".10")
   ret i64 0
 }
 
-@"__str_9" = internal constant [14 x i8] c"Hello, World!\00"
+@"__str_9" = internal constant [5 x i8] c"%f\0a\00\00"
+@"__str_10" = internal constant [14 x i8] c"Hello, World!\00"

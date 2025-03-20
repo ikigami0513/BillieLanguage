@@ -1,14 +1,8 @@
-// Function returning the mathematical constant Pi (π)
-function pi() -> float {
-    return 3.14159265359;
-}
+// The mathematical constant Pi (π)
+const pi: float = 3.14159265359;
 
-// Function returning the mathematical constant Tau (τ), which is 2 * Pi
-function tau() -> float {
-    return pi() * 2.0;
-}
+// The mathematical constant Tau (τ), which is 2 * Pi
+const tau: float = 6.283185307179586;
 
-// Function returning the mathematical constant e (Euler's number)
-function e() -> float {
-    return 2.71828182846;
-}
+// The mathematical constant e (Euler's number)
+const e: float = 2.71828182846;

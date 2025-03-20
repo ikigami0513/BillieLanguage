@@ -1,6 +1,7 @@
 import "math/mod";
 
 function main() -> int {
+    print("%f\n", pi);
     print("Hello, World!");
     return 0;
 }

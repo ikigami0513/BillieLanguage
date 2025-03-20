@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from enum import Enum, auto
 
 from billie.ast import Statement, Expression, Program
-from billie.ast import ExpressionStatement, LetStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
+from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
 from billie.ast import WhileStatement, BreakStatement, ContinueStatement, ForStatement, ImportStatement
 from billie.ast import InfixExpression, CallExpression, PrefixExpression, PostfixExpression
 from billie.ast import IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral, StringLiteral
@@ -163,6 +163,8 @@ class Parser:
         match self.current_token.type:
             case TokenType.LET:
                 return self.parse_let_statement()
+            case TokenType.CONST:
+                return self.parse_const_statement()
             case TokenType.FUNCTION:
                 return self.parse_function_statement()
             case TokenType.RETURN:
@@ -215,6 +217,34 @@ class Parser:
         while not self.current_token_is(TokenType.SEMICOLON) and not self.current_token_is(TokenType.EOF):
             self.next_token()
         
+        return stmt
+    
+    def parse_const_statement(self) -> ConstStatement:
+        stmt: ConstStatement = ConstStatement()
+
+        if not self.expect_peek(TokenType.IDENT):
+            return None
+        
+        stmt.name = IdentifierLiteral(value=self.current_token.literal)
+
+        if not self.expect_peek(TokenType.COLON):
+            return None
+        
+        if not self.expect_peek(TokenType.TYPE):
+            return None
+        
+        stmt.value_type = self.current_token.literal
+
+        if not self.expect_peek(TokenType.EQ):
+            return None
+        
+        self.next_token()
+
+        stmt.value = self.parse_expression(PrecedenceType.P_LOWEST)
+
+        while not self.current_token_is(TokenType.SEMICOLON) and not self.current_token_is(TokenType.EOF):
+            self.next_token()
+
         return stmt
     
     def parse_function_statement(self) -> FunctionStatement:
