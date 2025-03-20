@@ -1,5 +1,6 @@
 from llvmlite import ir
 import os
+import sys
 
 from billie.ast import Node, NodeType, Program, Expression
 from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
@@ -232,7 +233,7 @@ class Compiler:
         value: Expression = node.right_value
 
         if self.env.lookup(name) is None:
-            self.errors.append(f"COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned.")
+            self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned.")
             return
         
         right_value, right_type = self.resolve_value(value)
@@ -399,7 +400,7 @@ class Compiler:
 
         program: Program = p.parse_program()
         if len(p.errors) > 0:
-            print(f"Error with imported pallet: {file_path}")
+            print(f"[line {node.line_no}] Error with imported pallet: {file_path}")
             for err in p.errors:
                 print(err)
             exit(1)
@@ -526,7 +527,7 @@ class Compiler:
         operator: str = node.operator
 
         if self.env.lookup(left_node.value) is None:
-            self.errors.append(f"COMPILE ERROR: Identifier {left_node.value} has not been declared before it was used in a PostfixExpression.")
+            self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {left_node.value} has not been declared before it was used in a PostfixExpression.")
             return
         
         var_ptr, _ = self.env.lookup(left_node.value)
@@ -563,7 +564,11 @@ class Compiler:
                 return ir.Constant(Type, value), Type
             case NodeType.IdentifierLiteral:
                 node: IdentifierLiteral = node
-                ptr, Type = self.env.lookup(node.value)
+                data = self.env.lookup(node.value)
+                if data is None:
+                    print(f"[line {node.line_no}] {node.value} is not defined.")
+                    sys.exit()
+                ptr, Type = data
                 return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:
                 node: BooleanLiteral = node

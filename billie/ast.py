@@ -38,6 +38,9 @@ class NodeType(StrEnum):
 
 
 class Node(ABC):
+    def __init__(self, line_no: int) -> None:
+        self.line_no = line_no
+
     @abstractmethod
     def type(self) -> NodeType:
         """ Returns back the NodeType """
@@ -74,7 +77,8 @@ class Program(Node):
 
 # region Helpers
 class FunctionParameter(Expression):
-    def __init__(self, name: str, value_type: str = None) -> None:
+    def __init__(self, line_no: int, name: str, value_type: str = None) -> None:
+        super().__init__(line_no)
         self.name = name
         self.value_type = value_type
 
@@ -92,7 +96,8 @@ class FunctionParameter(Expression):
 
 # region Statements
 class ExpressionStatement(Statement):
-    def __init__(self, expr: Expression = None) -> None:
+    def __init__(self, line_no: int, expr: Expression = None) -> None:
+        super().__init__(line_no)
         self.expr = expr
 
     def type(self) -> NodeType:
@@ -106,7 +111,8 @@ class ExpressionStatement(Statement):
     
 
 class LetStatement(Statement):
-    def __init__(self, name: Expression = None, value: Expression = None, value_type: str = None) -> None:
+    def __init__(self, line_no: int, name: Expression = None, value: Expression = None, value_type: str = None) -> None:
+        super().__init__(line_no)
         self.name = name
         self.value = value
         self.value_type = value_type
@@ -124,7 +130,8 @@ class LetStatement(Statement):
     
 
 class ConstStatement(Statement):
-    def __init__(self, name: Expression = None, value: Expression = None, value_type: str = None) -> None:
+    def __init__(self, line_no: int, name: Expression = None, value: Expression = None, value_type: str = None) -> None:
+        super().__init__(line_no)
         self.name = name
         self.value = value
         self.value_type = value_type
@@ -142,7 +149,8 @@ class ConstStatement(Statement):
     
 
 class BlockStatement(Statement):
-    def __init__(self, statements: list[Statement] = None) -> None:
+    def __init__(self, line_no: int, statements: list[Statement] = None) -> None:
+        super().__init__(line_no)
         self.statements = statements if statements is not None else []
 
     def type(self) -> NodeType:
@@ -156,7 +164,8 @@ class BlockStatement(Statement):
     
 
 class ReturnStatement(Statement):
-    def __init__(self, return_value: Expression = None) -> None:
+    def __init__(self, line_no: int, return_value: Expression = None) -> None:
+        super().__init__(line_no)
         self.return_value = return_value
 
     def type(self) -> NodeType:
@@ -170,7 +179,8 @@ class ReturnStatement(Statement):
     
 
 class FunctionStatement(Statement):
-    def __init__(self, parameters: list[FunctionParameter] = [], body: BlockStatement = None, name = None, return_type: str = None) -> None:
+    def __init__(self, line_no: int, parameters: list[FunctionParameter] = [], body: BlockStatement = None, name = None, return_type: str = None) -> None:
+        super().__init__(line_no)
         self.parameters = parameters
         self.body = body
         self.name = name
@@ -190,7 +200,8 @@ class FunctionStatement(Statement):
 
 
 class AssignStatement(Statement):
-    def __init__(self, ident: Expression = None, operator: str = "", right_value: Expression = None) -> None:
+    def __init__(self, line_no: int, ident: Expression = None, operator: str = "", right_value: Expression = None) -> None:
+        super().__init__(line_no)
         self.ident = ident
         self.operator = operator
         self.right_value = right_value
@@ -208,7 +219,8 @@ class AssignStatement(Statement):
     
 
 class IfStatement(Statement):
-    def __init__(self, condition: Expression = None, consequence: BlockStatement = None, alternative: BlockStatement = None) -> None:
+    def __init__(self, line_no: int, condition: Expression = None, consequence: BlockStatement = None, alternative: BlockStatement = None) -> None:
+        super().__init__(line_no)
         self.condition = condition
         self.consequence = consequence
         self.alternative = alternative
@@ -226,7 +238,8 @@ class IfStatement(Statement):
     
 
 class WhileStatement(Statement):
-    def __init__(self, condition: Expression, body: BlockStatement = None) -> None:
+    def __init__(self, line_no: int, condition: Expression, body: BlockStatement = None) -> None:
+        super().__init__(line_no)
         self.condition = condition
         self.body = body if body is not None else []
 
@@ -242,6 +255,9 @@ class WhileStatement(Statement):
     
 
 class BreakStatement(Statement):
+    def __init__(self, line_no: int):
+        super().__init__(line_no)
+
     def type(self) -> NodeType:
         return NodeType.BreakStatement
     
@@ -252,6 +268,9 @@ class BreakStatement(Statement):
     
 
 class ContinueStatement(Statement):
+    def __init__(self, line_no: int):
+        super().__init__(line_no)
+
     def type(self) -> NodeType:
         return NodeType.ContinueStatement
     
@@ -262,7 +281,8 @@ class ContinueStatement(Statement):
     
 
 class ForStatement(Statement):
-    def __init__(self, var_declaration: LetStatement = None, condition: Expression = None, action: AssignStatement = None, body: BlockStatement = None) -> None:
+    def __init__(self, line_no: int, var_declaration: LetStatement = None, condition: Expression = None, action: AssignStatement = None, body: BlockStatement = None) -> None:
+        super().__init__(line_no)
         self.var_declaration = var_declaration
         self.condition = condition
         self.action = action
@@ -282,7 +302,8 @@ class ForStatement(Statement):
     
 
 class ImportStatement(Statement):
-    def __init__(self, file_path: str) -> None:
+    def __init__(self, line_no: int, file_path: str) -> None:
+        super().__init__(line_no)
         self.file_path = file_path
 
     def type(self) -> NodeType:
@@ -298,7 +319,8 @@ class ImportStatement(Statement):
 
 # region Expressions
 class InfixExpression(Expression):
-    def __init__(self, left_node: Expression, operator: str, right_node: Expression = None):
+    def __init__(self, line_no: int, left_node: Expression, operator: str, right_node: Expression = None):
+        super().__init__(line_no)
         self.left_node: Expression = left_node
         self.operator: str = operator
         self.right_node: Expression = right_node
@@ -316,7 +338,8 @@ class InfixExpression(Expression):
     
 
 class CallExpression(Expression):
-    def __init__(self, function: Expression = None, arguments: list[Expression] = None) -> None:
+    def __init__(self, line_no: int, function: Expression = None, arguments: list[Expression] = None) -> None:
+        super().__init__(line_no)
         self.function = function  # IdentifierLiteral
         self.arguments = arguments
 
@@ -332,7 +355,8 @@ class CallExpression(Expression):
     
 
 class PrefixExpression(Expression):
-    def __init__(self, operator: str, right_node: Expression = None) -> None:
+    def __init__(self, line_no: int, operator: str, right_node: Expression = None) -> None:
+        super().__init__(line_no)
         self.operator = operator
         self.right_node = right_node
 
@@ -348,7 +372,8 @@ class PrefixExpression(Expression):
     
 
 class PostfixExpression(Expression):
-    def __init__(self, left_node: Expression, operator: str) -> None:
+    def __init__(self, line_no: int, left_node: Expression, operator: str) -> None:
+        super().__init__(line_no)
         self.left_node = left_node
         self.operator = operator
 
@@ -366,7 +391,8 @@ class PostfixExpression(Expression):
 
 # region Literals
 class IntegerLiteral(Expression):
-    def __init__(self, value: int = None) -> None:
+    def __init__(self, line_no: int, value: int = None) -> None:
+        super().__init__(line_no)
         self.value: int = value
 
     def type(self) -> NodeType:
@@ -380,7 +406,8 @@ class IntegerLiteral(Expression):
     
 
 class FloatLiteral(Expression):
-    def __init__(self, value: float = None) -> None:
+    def __init__(self, line_no: int, value: float = None) -> None:
+        super().__init__(line_no)
         self.value: float = value
 
     def type(self) -> NodeType:
@@ -394,7 +421,8 @@ class FloatLiteral(Expression):
     
 
 class IdentifierLiteral(Expression):
-    def __init__(self, value: str = None) -> None:
+    def __init__(self, line_no: int, value: str = None) -> None:
+        super().__init__(line_no)
         self.value: str = value
 
     def type(self) -> NodeType:
@@ -408,7 +436,8 @@ class IdentifierLiteral(Expression):
     
 
 class BooleanLiteral(Expression):
-    def __init__(self, value: bool = None) -> None:
+    def __init__(self, line_no: int, value: bool = None) -> None:
+        super().__init__(line_no)
         self.value = value
 
     def type(self) -> NodeType:
@@ -422,7 +451,8 @@ class BooleanLiteral(Expression):
     
 
 class StringLiteral(Expression):
-    def __init__(self, value: str = None) -> None:
+    def __init__(self, line_no: int, value: str = None) -> None:
+        super().__init__(line_no)
         self.value: str = value
 
     def type(self) -> NodeType:

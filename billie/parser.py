@@ -137,10 +137,10 @@ class Parser:
         return prec
     
     def peek_error(self, tt: TokenType) -> None:
-        self.errors.append(f"Expected next token to be {tt}, got {self.peek_token.type} instead.")
+        self.errors.append(f"[line {self.peek_token.line_no}] Expected next token to be {tt}, got {self.peek_token.type} ({self.peek_token.literal}) instead.")
 
     def no_prefix_parse_fn_error(self, tt: TokenType):
-        self.errors.append(f"No Prefix Parse Function for {tt} found")
+        self.errors.append(f"[line {self.current_token.line_no}] No Prefix Parse Function for {tt} found")
 
     def parse_program(self) -> Program:
         """ Main execution entry to the Parser """
@@ -188,16 +188,16 @@ class Parser:
         if self.peek_token_is(TokenType.SEMICOLON):
             self.next_token()
 
-        stmt = ExpressionStatement(expr=expr)
+        stmt = ExpressionStatement(line_no=self.current_token.line_no, expr=expr)
         return stmt
     
     def parse_let_statement(self) -> LetStatement:
-        stmt: LetStatement = LetStatement()
+        stmt: LetStatement = LetStatement(line_no=self.current_token.line_no)
 
         if not self.expect_peek(TokenType.IDENT):
             return None
         
-        stmt.name = IdentifierLiteral(value=self.current_token.literal)
+        stmt.name = IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
 
         if not self.expect_peek(TokenType.COLON):
             return None
@@ -220,12 +220,12 @@ class Parser:
         return stmt
     
     def parse_const_statement(self) -> ConstStatement:
-        stmt: ConstStatement = ConstStatement()
+        stmt: ConstStatement = ConstStatement(line_no=self.current_token.line_no)
 
         if not self.expect_peek(TokenType.IDENT):
             return None
         
-        stmt.name = IdentifierLiteral(value=self.current_token.literal)
+        stmt.name = IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
 
         if not self.expect_peek(TokenType.COLON):
             return None
@@ -248,12 +248,12 @@ class Parser:
         return stmt
     
     def parse_function_statement(self) -> FunctionStatement:
-        stmt = FunctionStatement()
+        stmt = FunctionStatement(line_no=self.current_token.line_no)
 
         if not self.expect_peek(TokenType.IDENT):
             return None
         
-        stmt.name = IdentifierLiteral(value=self.current_token.literal)
+        stmt.name = IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
 
         if not self.expect_peek(TokenType.LPAREN):
             return None
@@ -281,7 +281,7 @@ class Parser:
         
         self.next_token()
 
-        first_param = FunctionParameter(name=self.current_token.literal)
+        first_param = FunctionParameter(line_no=self.current_token.line_no, name=self.current_token.literal)
 
         if not self.expect_peek(TokenType.COLON):
             return None
@@ -295,7 +295,7 @@ class Parser:
             self.next_token()
             self.next_token()
 
-            param = FunctionParameter(name=self.current_token.literal)
+            param = FunctionParameter(line_no=self.current_token.line_no, name=self.current_token.literal)
 
             if not self.expect_peek(TokenType.COLON):
                 return None
@@ -311,7 +311,7 @@ class Parser:
         return params
 
     def parse_block_statement(self) -> BlockStatement:
-        block_stmt = BlockStatement()
+        block_stmt = BlockStatement(line_no=self.current_token.line_no)
         self.next_token()
 
         while not self.current_token_is(TokenType.RBRACE) and not self.current_token_is(TokenType.EOF):
@@ -322,7 +322,7 @@ class Parser:
         return block_stmt
 
     def parse_return_statement(self) -> ReturnStatement:
-        stmt = ReturnStatement()
+        stmt = ReturnStatement(line_no=self.current_token.line_no)
         self.next_token()
         stmt.return_value = self.parse_expression(PrecedenceType.P_LOWEST)
 
@@ -331,9 +331,9 @@ class Parser:
         return stmt
     
     def parse_assignment_statement(self) -> AssignStatement:
-        stmt = AssignStatement()
+        stmt = AssignStatement(line_no=self.current_token.line_no)
 
-        stmt.ident = IdentifierLiteral(value=self.current_token.literal)
+        stmt.ident = IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
 
         self.next_token()  # Skips the 'IDENT'
 
@@ -368,7 +368,7 @@ class Parser:
 
             alternative = self.parse_block_statement()
 
-        return IfStatement(condition=condition, consequence=consequence, alternative=alternative)
+        return IfStatement(line_no=self.current_token.line_no, condition=condition, consequence=consequence, alternative=alternative)
     
     def parse_while_statement(self) -> WhileStatement:
         condition: Expression = None
@@ -383,18 +383,18 @@ class Parser:
         
         body = self.parse_block_statement()
 
-        return WhileStatement(condition=condition, body=body)
+        return WhileStatement(line_no=self.current_token.line_no, condition=condition, body=body)
     
     def parse_break_statement(self) -> BreakStatement:
         self.next_token()
-        return BreakStatement()
+        return BreakStatement(line_no=self.current_token.line_no)
     
     def parse_continue_statement(self) -> ContinueStatement:
         self.next_token()
-        return ContinueStatement()
+        return ContinueStatement(line_no=self.current_token.line_no)
     
     def parse_for_statement(self) -> ForStatement:
-        stmt: ForStatement = ForStatement()
+        stmt: ForStatement = ForStatement(line_no=self.current_token.line_no)
 
         if not self.expect_peek(TokenType.LPAREN):
             return None
@@ -433,7 +433,7 @@ class Parser:
         if not self.expect_peek(TokenType.STRING):
             return None
         
-        stmt = ImportStatement(file_path=self.current_token.literal)
+        stmt = ImportStatement(line_no=self.current_token.line_no, file_path=self.current_token.literal)
 
         if not self.expect_peek(TokenType.SEMICOLON):
             return None
@@ -461,7 +461,7 @@ class Parser:
     
     def parse_infix_expression(self, left_node: Expression) -> Expression:
         """ Parses and returns a normal InfixExpression """
-        infix_expr = InfixExpression(left_node=left_node, operator=self.current_token.literal)
+        infix_expr = InfixExpression(line_no=self.current_token.line_no, left_node=left_node, operator=self.current_token.literal)
         precedence = self.current_precedence()
         self.next_token()
         infix_expr.right_node = self.parse_expression(precedence)
@@ -476,7 +476,7 @@ class Parser:
         return expr
     
     def parse_call_expression(self, function: Expression) -> CallExpression:
-        expr = CallExpression(function=function)
+        expr = CallExpression(line_no=self.current_token.line_no, function=function)
         expr.arguments = self.parse_expression_list(TokenType.RPAREN)
         
         return expr
@@ -504,46 +504,46 @@ class Parser:
         return e_list
     
     def parse_prefix_expression(self) -> PrefixExpression:
-        prefix_expr = PrefixExpression(operator=self.current_token.literal)
+        prefix_expr = PrefixExpression(line_no=self.current_token.line_no, operator=self.current_token.literal)
         self.next_token()
         prefix_expr.right_node = self.parse_expression(PrecedenceType.P_PREFIX)
         return prefix_expr
     
     def parse_postfix_expression(self, left_node: Expression) -> PostfixExpression:
-        return PostfixExpression(left_node=left_node, operator=self.current_token.literal)
+        return PostfixExpression(line_no=self.current_token.line_no, left_node=left_node, operator=self.current_token.literal)
     # endregion
 
     # region Prefix Methods
     def parse_identifier(self) -> IdentifierLiteral:
-        return IdentifierLiteral(value=self.current_token.literal)
+        return IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
 
     def parse_int_literal(self) -> Expression:
         """ Parses an IntegerLiteral Node from the current token """
-        int_lit = IntegerLiteral()
+        int_lit = IntegerLiteral(line_no=self.current_token.line_no)
 
         try:
             int_lit.value = int(self.current_token.literal)
         except:
-            self.errors.append(f"Could not parse `{self.current_token.literal}` as an integer.")
+            self.errors.append(f"[line {self.current_token.line_no}] Could not parse `{self.current_token.literal}` as an integer.")
             return None
         
         return int_lit
     
     def parse_float_literal(self) -> Expression:
         """ Parses an FloatLiteral Node from the current token """
-        float_lit = FloatLiteral()
+        float_lit = FloatLiteral(line_no=self.current_token.line_no)
 
         try:
             float_lit.value = float(self.current_token.literal)
         except:
-            self.errors.append(f"Could not parse `{self.current_token.literal}` as n float.")
+            self.errors.append(f"[line {self.current_token.line_no}] Could not parse `{self.current_token.literal}` as n float.")
             return None
         
         return float_lit
     
     def parse_boolean(self) -> BooleanLiteral:
-        return BooleanLiteral(value=self.current_token_is(TokenType.TRUE))
+        return BooleanLiteral(line_no=self.current_token.line_no, value=self.current_token_is(TokenType.TRUE))
     
     def parse_string_literal(self) -> StringLiteral:
-        return StringLiteral(value=self.current_token.literal)
+        return StringLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
     # endregion
