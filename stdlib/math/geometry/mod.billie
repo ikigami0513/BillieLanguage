@@ -1,0 +1,4 @@
+import "math/geometry/vector2i";
+import "math/geometry/vector3i";
+import "math/geometry/vector2f";
+import "math/geometry/vector3f";

@@ -2,6 +2,11 @@
 target triple = "x86_64-pc-windows-msvc"
 target datalayout = ""
 
+%"Vector2i" = type {i64, i64}
+%"Vector3i" = type {i64, i64, i64}
+%"Vector2f" = type {float, float}
+%"Vector3f" = type {float, float, float}
+%"Person" = type {i8*, i64}
 declare i64 @"printf"(i8* %".1", ...)
 
 @"true" = constant i1 1
@@ -19,9 +24,9 @@ powi_entry:
   store i64 0, i64* %".10"
   br label %"for_loop_entry_1"
 for_loop_entry_1:
-  %".13" = load i64, i64* %".4"
-  %".14" = load i64, i64* %".8"
-  %".15" = mul i64 %".14", %".13"
+  %".13" = load i64, i64* %".8"
+  %".14" = load i64, i64* %".4"
+  %".15" = mul i64 %".13", %".14"
   store i64 %".15", i64* %".8"
   %".17" = load i64, i64* %".10"
   %".18" = add i64 %".17", 1
@@ -48,9 +53,9 @@ powf_entry:
   store i64 0, i64* %".10"
   br label %"for_loop_entry_2"
 for_loop_entry_2:
-  %".13" = load float, float* %".4"
-  %".14" = load float, float* %".8"
-  %".15" = fmul float %".14", %".13"
+  %".13" = load float, float* %".8"
+  %".14" = load float, float* %".4"
+  %".15" = fmul float %".13", %".14"
   store float %".15", float* %".8"
   %".17" = load i64, i64* %".10"
   %".18" = add i64 %".17", 1
@@ -129,16 +134,16 @@ sqrt_entry.endif:
   br i1 %".22", label %"while_loop_entry_3", label %"while_loop_otherwise_3"
 while_loop_entry_3:
   %".24" = load float, float* %".11"
-  %".25" = load float, float* %".13"
-  %".26" = fadd float %".24", %".25"
-  %".27" = fdiv float %".26", 0x4000000000000000
-  %".28" = load float, float* %".11"
-  store float %".27", float* %".11"
-  %".30" = load float, float* %".3"
-  %".31" = load float, float* %".11"
-  %".32" = fdiv float %".30", %".31"
-  %".33" = load float, float* %".13"
-  store float %".32", float* %".13"
+  %".25" = load float, float* %".11"
+  %".26" = load float, float* %".13"
+  %".27" = fadd float %".25", %".26"
+  %".28" = fdiv float %".27", 0x4000000000000000
+  store float %".28", float* %".11"
+  %".30" = load float, float* %".13"
+  %".31" = load float, float* %".3"
+  %".32" = load float, float* %".11"
+  %".33" = fdiv float %".31", %".32"
+  store float %".33", float* %".13"
   %".35" = load float, float* %".11"
   %".36" = load float, float* %".13"
   %".37" = fsub float %".35", %".36"
@@ -183,16 +188,16 @@ ln_entry.endif:
   store i64 1, i64* %".26"
   br label %"for_loop_entry_4"
 for_loop_entry_4:
-  %".29" = load float, float* %".19"
-  %".30" = load i64, i64* %".26"
-  %".31" = sitofp i64 %".30" to float
-  %".32" = fdiv float %".29", %".31"
-  %".33" = load float, float* %".16"
-  %".34" = fadd float %".33", %".32"
+  %".29" = load float, float* %".16"
+  %".30" = load float, float* %".19"
+  %".31" = load i64, i64* %".26"
+  %".32" = sitofp i64 %".31" to float
+  %".33" = fdiv float %".30", %".32"
+  %".34" = fadd float %".29", %".33"
   store float %".34", float* %".16"
-  %".36" = load float, float* %".24"
-  %".37" = load float, float* %".19"
-  %".38" = fmul float %".37", %".36"
+  %".36" = load float, float* %".19"
+  %".37" = load float, float* %".24"
+  %".38" = fmul float %".36", %".37"
   store float %".38", float* %".19"
   %".40" = load i64, i64* %".26"
   %".41" = add i64 %".40", 2
@@ -219,16 +224,16 @@ exp_entry:
   store i64 1, i64* %".9"
   br label %"for_loop_entry_5"
 for_loop_entry_5:
-  %".12" = load float, float* %".3"
-  %".13" = load i64, i64* %".9"
-  %".14" = sitofp i64 %".13" to float
-  %".15" = fdiv float %".12", %".14"
-  %".16" = load float, float* %".7"
-  %".17" = fmul float %".16", %".15"
+  %".12" = load float, float* %".7"
+  %".13" = load float, float* %".3"
+  %".14" = load i64, i64* %".9"
+  %".15" = sitofp i64 %".14" to float
+  %".16" = fdiv float %".13", %".15"
+  %".17" = fmul float %".12", %".16"
   store float %".17", float* %".7"
-  %".19" = load float, float* %".7"
-  %".20" = load float, float* %".5"
-  %".21" = fadd float %".20", %".19"
+  %".19" = load float, float* %".5"
+  %".20" = load float, float* %".7"
+  %".21" = fadd float %".19", %".20"
   store float %".21", float* %".5"
   %".23" = load i64, i64* %".9"
   %".24" = add i64 %".23", 1
@@ -288,20 +293,20 @@ sin_entry:
   store i64 3, i64* %".16"
   br label %"for_loop_entry_6"
 for_loop_entry_6:
-  %".19" = load float, float* %".14"
-  %".20" = fmul float %".19", 0xbff0000000000000
-  %".21" = load i64, i64* %".16"
-  %".22" = sub i64 %".21", 1
-  %".23" = load i64, i64* %".16"
-  %".24" = mul i64 %".22", %".23"
-  %".25" = sitofp i64 %".24" to float
-  %".26" = fdiv float %".20", %".25"
-  %".27" = load float, float* %".9"
-  %".28" = fmul float %".27", %".26"
+  %".19" = load float, float* %".9"
+  %".20" = load float, float* %".14"
+  %".21" = fmul float %".20", 0xbff0000000000000
+  %".22" = load i64, i64* %".16"
+  %".23" = sub i64 %".22", 1
+  %".24" = load i64, i64* %".16"
+  %".25" = mul i64 %".23", %".24"
+  %".26" = sitofp i64 %".25" to float
+  %".27" = fdiv float %".21", %".26"
+  %".28" = fmul float %".19", %".27"
   store float %".28", float* %".9"
-  %".30" = load float, float* %".9"
-  %".31" = load float, float* %".6"
-  %".32" = fadd float %".31", %".30"
+  %".30" = load float, float* %".6"
+  %".31" = load float, float* %".9"
+  %".32" = fadd float %".30", %".31"
   store float %".32", float* %".6"
   %".34" = load i64, i64* %".16"
   %".35" = add i64 %".34", 2
@@ -332,20 +337,20 @@ cos_entry:
   store i64 2, i64* %".14"
   br label %"for_loop_entry_7"
 for_loop_entry_7:
-  %".17" = load float, float* %".12"
-  %".18" = fmul float %".17", 0xbff0000000000000
-  %".19" = load i64, i64* %".14"
-  %".20" = sub i64 %".19", 1
-  %".21" = load i64, i64* %".14"
-  %".22" = mul i64 %".20", %".21"
-  %".23" = sitofp i64 %".22" to float
-  %".24" = fdiv float %".18", %".23"
-  %".25" = load float, float* %".7"
-  %".26" = fmul float %".25", %".24"
+  %".17" = load float, float* %".7"
+  %".18" = load float, float* %".12"
+  %".19" = fmul float %".18", 0xbff0000000000000
+  %".20" = load i64, i64* %".14"
+  %".21" = sub i64 %".20", 1
+  %".22" = load i64, i64* %".14"
+  %".23" = mul i64 %".21", %".22"
+  %".24" = sitofp i64 %".23" to float
+  %".25" = fdiv float %".19", %".24"
+  %".26" = fmul float %".17", %".25"
   store float %".26", float* %".7"
-  %".28" = load float, float* %".7"
-  %".29" = load float, float* %".5"
-  %".30" = fadd float %".29", %".28"
+  %".28" = load float, float* %".5"
+  %".29" = load float, float* %".7"
+  %".30" = fadd float %".28", %".29"
   store float %".30", float* %".5"
   %".32" = load i64, i64* %".14"
   %".33" = add i64 %".32", 2
@@ -480,27 +485,27 @@ asin_entry:
   store i64 1, i64* %".16"
   br label %"for_loop_entry_8"
 for_loop_entry_8:
-  %".19" = load float, float* %".14"
-  %".20" = load i64, i64* %".16"
-  %".21" = mul i64 2, %".20"
-  %".22" = sub i64 %".21", 1
-  %".23" = sitofp i64 %".22" to float
-  %".24" = fmul float %".19", %".23"
-  %".25" = load i64, i64* %".16"
-  %".26" = mul i64 2, %".25"
-  %".27" = sitofp i64 %".26" to float
-  %".28" = fdiv float %".24", %".27"
-  %".29" = load float, float* %".9"
-  %".30" = fmul float %".29", %".28"
+  %".19" = load float, float* %".9"
+  %".20" = load float, float* %".14"
+  %".21" = load i64, i64* %".16"
+  %".22" = mul i64 2, %".21"
+  %".23" = sub i64 %".22", 1
+  %".24" = sitofp i64 %".23" to float
+  %".25" = fmul float %".20", %".24"
+  %".26" = load i64, i64* %".16"
+  %".27" = mul i64 2, %".26"
+  %".28" = sitofp i64 %".27" to float
+  %".29" = fdiv float %".25", %".28"
+  %".30" = fmul float %".19", %".29"
   store float %".30", float* %".9"
-  %".32" = load float, float* %".9"
-  %".33" = load i64, i64* %".16"
-  %".34" = mul i64 2, %".33"
-  %".35" = add i64 %".34", 1
-  %".36" = sitofp i64 %".35" to float
-  %".37" = fdiv float %".32", %".36"
-  %".38" = load float, float* %".6"
-  %".39" = fadd float %".38", %".37"
+  %".32" = load float, float* %".6"
+  %".33" = load float, float* %".9"
+  %".34" = load i64, i64* %".16"
+  %".35" = mul i64 2, %".34"
+  %".36" = add i64 %".35", 1
+  %".37" = sitofp i64 %".36" to float
+  %".38" = fdiv float %".33", %".37"
+  %".39" = fadd float %".32", %".38"
   store float %".39", float* %".6"
   %".41" = load i64, i64* %".16"
   %".42" = add i64 %".41", 1
@@ -582,21 +587,84 @@ factorial_entry.endif:
   ret i64 %".16"
 }
 
+define %"Vector2i" @"Vector2i_init"()
+{
+Vector2i_init_entry:
+  %".2" = insertvalue %"Vector2i" zeroinitializer, i64 0, 0
+  %".3" = insertvalue %"Vector2i" %".2", i64 0, 1
+  ret %"Vector2i" %".3"
+}
+
+define %"Vector3i" @"Vector3i_init"()
+{
+Vector3i_init_entry:
+  %".2" = insertvalue %"Vector3i" zeroinitializer, i64 0, 0
+  %".3" = insertvalue %"Vector3i" %".2", i64 0, 1
+  %".4" = insertvalue %"Vector3i" %".3", i64 0, 2
+  ret %"Vector3i" %".4"
+}
+
+define %"Vector2f" @"Vector2f_init"()
+{
+Vector2f_init_entry:
+  %".2" = insertvalue %"Vector2f" zeroinitializer, float              0x0, 0
+  %".3" = insertvalue %"Vector2f" %".2", float              0x0, 1
+  ret %"Vector2f" %".3"
+}
+
+define %"Vector3f" @"Vector3f_init"()
+{
+Vector3f_init_entry:
+  %".2" = insertvalue %"Vector3f" zeroinitializer, float              0x0, 0
+  %".3" = insertvalue %"Vector3f" %".2", float              0x0, 1
+  %".4" = insertvalue %"Vector3f" %".3", float              0x0, 2
+  ret %"Vector3f" %".4"
+}
+
+define void @"Person_greet"(%"Person" %".1", i8* %".2")
+{
+Person_greet_entry:
+  %".4" = alloca i8*
+  store i8* %".2", i8** %".4"
+  %".6" = getelementptr [15 x i8], [15 x i8]* @"__str_9", i32 0, i32 0
+  %".7" = load i8*, i8** %".4"
+  %".8" = extractvalue %"Person" %".1", 0
+  %".9" = alloca i8*
+  store i8* %".6", i8** %".9"
+  %".11" = bitcast [15 x i8]* @"__str_9" to i8*
+  %".12" = call i64 (i8*, ...) @"printf"(i8* %".11", i8* %".7", i8* %".8")
+  %".13" = getelementptr [21 x i8], [21 x i8]* @"__str_10", i32 0, i32 0
+  %".14" = extractvalue %"Person" %".1", 1
+  %".15" = alloca i8*
+  store i8* %".13", i8** %".15"
+  %".17" = bitcast [21 x i8]* @"__str_10" to i8*
+  %".18" = call i64 (i8*, ...) @"printf"(i8* %".17", i64 %".14")
+  ret void
+}
+
+@"__str_9" = internal constant [15 x i8] c"%s, I am %s.\0a\00\00"
+@"__str_10" = internal constant [21 x i8] c"I am %i years old.\0a\00\00"
+define %"Person" @"Person_init"()
+{
+Person_init_entry:
+  %".2" = insertvalue %"Person" zeroinitializer, i8* null, 0
+  %".3" = insertvalue %"Person" %".2", i64 0, 1
+  ret %"Person" %".3"
+}
+
 define i64 @"main"()
 {
 main_entry:
-  %".2" = load float, float* @"pi"
-  %".3" = alloca [5 x i8]*
-  store [5 x i8]* @"__str_9", [5 x i8]** %".3"
-  %".5" = fpext float %".2" to double
-  %".6" = bitcast [5 x i8]* @"__str_9" to i8*
-  %".7" = call i64 (i8*, ...) @"printf"(i8* %".6", double %".5")
-  %".8" = alloca [14 x i8]*
-  store [14 x i8]* @"__str_10", [14 x i8]** %".8"
-  %".10" = bitcast [14 x i8]* @"__str_10" to i8*
-  %".11" = call i64 (i8*, ...) @"printf"(i8* %".10")
+  %".2" = call %"Person" @"Person_init"()
+  %".3" = extractvalue %"Person" %".2", 0
+  %".4" = getelementptr [6 x i8], [6 x i8]* @"__str_11", i32 0, i32 0
+  %".5" = insertvalue %"Person" %".2", i8* %".4", 0
+  %".6" = extractvalue %"Person" %".5", 1
+  %".7" = insertvalue %"Person" %".5", i64 21, 1
+  %".8" = getelementptr [6 x i8], [6 x i8]* @"__str_12", i32 0, i32 0
+  call void @"Person_greet"(%"Person" %".7", i8* %".8")
   ret i64 0
 }
 
-@"__str_9" = internal constant [5 x i8] c"%f\0a\00\00"
-@"__str_10" = internal constant [14 x i8] c"Hello, World!\00"
+@"__str_11" = internal constant [6 x i8] c"Ethan\00"
+@"__str_12" = internal constant [6 x i8] c"Hello\00"

@@ -1,0 +1,4 @@
+class Vector2f {
+    public x: float;
+    public y: float;
+}

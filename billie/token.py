@@ -71,6 +71,12 @@ class TokenType(StrEnum):
     FOR = "FOR"
     IMPORT = "IMPORT"
 
+    # Structures Keyword
+    PUBLIC = "PUBLIC"
+    PROTECTED = "PROTECTED"
+    PRIVATE = "PRIVATE"
+    CLASS = "CLASS"
+
     # Typing
     TYPE = "TYPE"
 
@@ -102,7 +108,11 @@ KEYWORDS: dict[str, TokenType] = {
     "break": TokenType.BREAK,
     "continue": TokenType.CONTINUE,
     "for": TokenType.FOR,
-    "import": TokenType.IMPORT
+    "import": TokenType.IMPORT,
+    "public": TokenType.PUBLIC,
+    "protected": TokenType.PROTECTED,
+    "private": TokenType.PRIVATE,
+    "class": TokenType.CLASS
 }
 
 TYPE_KEYWORDS: list[str] = [

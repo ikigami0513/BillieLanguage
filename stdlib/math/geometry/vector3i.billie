@@ -1,0 +1,5 @@
+class Vector3i {
+    public x: int;
+    public y: int;
+    public z: int;
+}

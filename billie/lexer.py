@@ -67,7 +67,7 @@ class Lexer:
         return self.source[self.read_position]
 
     def skip_whitespace(self) -> None:
-        while self.current_char in [' ', '\t', '\n', '\r']:
+        while self.current_char is not None and self.current_char in [' ', '\t', '\n', '\r']:
             # Advance the line number if this is a line break
             if self.current_char == '\n':
                 self.line_no += 1
@@ -130,7 +130,7 @@ class Lexer:
     
     def read_identifier(self) -> str:
         position = self.position
-        while self.current_char is not None and (self.is_letter(self.current_char) or self.current_char.isalnum()):
+        while self.current_char is not None and (self.is_letter(self.current_char) or self.current_char.isalnum() or self.current_char == '.'):
             self.read_char()
 
         return self.source[position:self.position]

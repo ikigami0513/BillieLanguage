@@ -1,7 +1,19 @@
 import "math/mod";
 
+class Person {
+    public name: string;
+    public age: int;
+
+    public function greet(message: string) -> void {
+        print("%s, I am %s.\n", message, self.name);
+        print("I am %i years old.\n", self.age);
+    }
+}
+
 function main() -> int {
-    print("%f\n", pi);
-    print("Hello, World!");
+    let person: Person = init();
+    person.name = "Ethan";
+    person.age = 21;
+    person.greet("Hello");
     return 0;
 }

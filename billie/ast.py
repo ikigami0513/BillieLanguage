@@ -19,6 +19,9 @@ class NodeType(StrEnum):
     ContinueStatement = "ContinueStatement"
     ForStatement = "ForStatement"
     ImportStatement = "ImportStatement"
+    ClassFieldStatement = "ClassFieldStatement"
+    ClassMethodStatement = "ClassMethodStatement"
+    ClassStatement = "ClassStatement"
 
     # Expressions
     InfixExpression = "InfixExpression"
@@ -32,6 +35,7 @@ class NodeType(StrEnum):
     IdentifierLiteral = "IdentifierLiteral"
     BooleanLiteral = "BooleanLiteral"
     StringLiteral = "StringLiteral"
+    ClassLiteral = "ClassLiteral"
 
     # Helper
     FunctionParameter = "FunctionParameter"
@@ -313,6 +317,66 @@ class ImportStatement(Statement):
         return {
             "type": self.type().value,
             "file_path": self.file_path
+        }
+    
+
+class FieldClassStatement(Statement):
+    def __init__(self, line_no: int, name: Expression = None, value_type: str = None, scope: str = None) -> None:
+        super().__init__(line_no)
+        self.name = name
+        self.value_type = value_type
+        self.scope = scope
+
+    def type(self) -> NodeType:
+        return NodeType.ClassFieldStatement
+    
+    def json(self) -> dict:
+        return {
+            "type": self.type().value,
+            "name": self.name.json(),
+            "value_type": self.value_type,
+            "scope": self.scope
+        }
+    
+
+class MethodClassStatement(Statement):
+    def __init__(self, line_no: int, parameters: list[FunctionParameter] = [], body: BlockStatement = None, name = None, return_type: str = None, scope: str = None) -> None:
+        super().__init__(line_no)
+        self.parameters = parameters
+        self.body = body
+        self.name = name
+        self.return_type = return_type
+        self.scope = scope
+
+    def type(self) -> NodeType:
+        return NodeType.ClassMethodStatement
+    
+    def json(self) -> dict:
+        return {
+            "type": self.type().value,
+            "name": self.name.json(),
+            "return_type": self.return_type,
+            "parameters": [p.json() for p in self.parameters],
+            "body": self.body.json(),
+            "scope": self.scope
+        }
+
+class ClassStatement(Statement):
+    def __init__(self, line_no: int, name: Expression = None, fields: list[FieldClassStatement] = None, methods: list[MethodClassStatement] = None) -> None:
+        super().__init__(line_no)
+        self.name = name
+        self.fields = fields if fields is not None else []
+        self.methods = methods if methods is not None else []
+
+    def type(self) -> NodeType:
+        return NodeType.ClassStatement
+    
+    def json(self) -> dict:
+        return {
+            "type": self.type().value,
+            "name": self.name.json(),
+            "fields": [field.json() for field in self.fields],
+            "methods": [method.json() for method in self.methods]
         }
 # endregion
 

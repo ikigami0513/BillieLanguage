@@ -5,7 +5,7 @@
     "debug": {
         "debug_folder": "./debug",
         "lexer": false,
-        "parser": false,
+        "parser": true,
         "compiler": true
     },
     "build": {

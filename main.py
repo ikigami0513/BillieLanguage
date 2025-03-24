@@ -64,10 +64,8 @@ if __name__ == '__main__':
             exit(1)
 
         if settings.PARSER_DEBUG:
-            print("===== PARSER DEBUG =====")
             with open(f"{settings.DEBUG_FOLDER}/ast.json", "w") as f:
                 json.dump(program.json(), f, indent=4)
-            print("Wrote AST to debug/ast.json successfully")
 
         c = Compiler()
 
@@ -113,10 +111,11 @@ if __name__ == '__main__':
         result = cfunc()
         et = time.time()
 
-        print(f"\n\n=== Parsed in: {round((parse_et - parse_st) * 1000, 6)} ms. ===")
+        print(f"\n=== Parsed in: {round((parse_et - parse_st) * 1000, 6)} ms. ===")
         print(f"=== Compiled in: {round((compiler_et - compiler_st) * 1000, 6)} ms. ===")
+        print(f"=== Executed in {round((et - st) * 1000, 6)} ms. ===")
 
-        print(f'\n\nProgram returned: {result}\n=== Executed in {round((et - st) * 1000, 6)} ms. ===')
+        print(f'\nProgram returned: {result}')
         
     elif action == "build":
         load_settings()

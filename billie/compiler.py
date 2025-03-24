@@ -1,10 +1,12 @@
 from llvmlite import ir
 import os
 import sys
+from typing import Any, Optional
 
 from billie.ast import Node, NodeType, Program, Expression
-from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
-from billie.ast import WhileStatement, ContinueStatement, BreakStatement, ForStatement, ImportStatement
+from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement
+from billie.ast import AssignStatement, IfStatement, WhileStatement, ContinueStatement, BreakStatement, ForStatement, ImportStatement
+from billie.ast import MethodClassStatement, ClassStatement
 from billie.ast import InfixExpression, CallExpression, PrefixExpression, PostfixExpression
 from billie.ast import IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral, StringLiteral
 from billie.ast import FunctionParameter
@@ -26,6 +28,8 @@ class Compiler:
             'void': ir.VoidType(),
             'string': ir.PointerType(ir.IntType(8))
         }
+
+        self.declared_classes: dict[str, Any] = {}
 
         # Initialize the main module
         self.module = ir.Module('main')
@@ -51,6 +55,9 @@ class Compiler:
 
         # Keeps a reference to parsed pallets
         self.global_parsed_pallets: dict[str, Program] = {}
+
+        self.is_let = False
+        self.let_node: Optional[LetStatement] = None
 
     def initialize_builtins(self):
         def init_print() -> ir.Function:
@@ -117,6 +124,8 @@ class Compiler:
                 self.visit_for_statement(node)
             case NodeType.ImportStatement:
                 self.visit_import_statement(node)
+            case NodeType.ClassStatement:
+                self.visit_class_statement(node)
 
             # Expressions
             case NodeType.InfixExpression:
@@ -138,24 +147,30 @@ class Compiler:
         self.compile(node.expr)
 
     def visit_let_statement(self, node: LetStatement) -> None:
+        self.is_let = True
+        self.let_node = node
         name: str = node.name.value
         value: Expression = node.value
-        value_type: str = node.value_type  # TODO: We'll use this more for type checking and other types like int64 later on
-
-        value, Type = self.resolve_value(node=value)
+        value_, Type = self.resolve_value(node=value)
 
         if self.env.lookup(name) is None:
             # Define and allocate the variable
-            ptr = self.builder.alloca(Type)
-
-            # Storing the value to the pointer
-            self.builder.store(value, ptr)
-
-            # Add the variable to the environment
-            self.env.define(name, ptr, Type)
+            if node.value_type in self.declared_classes.keys():
+                # Type: ir.FunctionType = Type  <- Plus nécessaire, Type est maintenant la structure elle-même
+                # ptr = self.builder.alloca(Type.return_type) <- Plus d'alloca
+                # Storing the value to the pointer <- Plus de store
+                # self.builder.store(value_, ptr)
+                self.env.define(name, value_, Type) # On stocke la valeur, pas un pointeur!
+            else:
+                ptr = self.builder.alloca(Type)
+                self.builder.store(value_, ptr)
+                self.env.define(name, ptr, Type)
         else:
             ptr, _ = self.env.lookup(name)
-            self.builder.store(value, ptr)
+            self.builder.store(value_, ptr)
+
+        self.is_let = False
+        self.let_node = None
 
     def visit_const_statement(self, node: ConstStatement) -> None:
         name: str = node.name.value
@@ -222,6 +237,9 @@ class Compiler:
 
         self.compile(body)
 
+        if return_type == ir.VoidType():
+            self.builder.ret_void()
+
         self.env = previous_env
         self.env.define(name, func, return_type)
 
@@ -232,50 +250,104 @@ class Compiler:
         operator: str = node.operator
         value: Expression = node.right_value
 
-        if self.env.lookup(name) is None:
-            self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned.")
-            return
-        
-        right_value, right_type = self.resolve_value(value)
+        if "." in name:
+            class_instance_name, attribute_name = name.split(".")
+            class_instance, Type = self.env.lookup(class_instance_name) # C'est la valeur, pas un pointeur
+            # class_instance = self.builder.load(class_instance_ptr)  <- Plus besoin de charger!
+            class_name = next((name for name, value_ in self.type_map.items() if value_ == Type)) # Type, pas Type.return_type
 
-        var_ptr, _ = self.env.lookup(name)
-        orig_value = self.builder.load(var_ptr)
+            attribute_index = None
+            for i, field in enumerate(self.declared_classes[class_name]["fields"]):
+                if field["name"] == attribute_name:
+                    attribute_index = i
 
-        if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-            orig_value = self.builder.sitofp(orig_value, ir.FloatType())
-        if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-            right_value = self.builder.sitofp(right_value, ir.FloatType())
+            # var_ptr = self.builder.extract_value(class_instance, attribute_index) # Plus un pointeur
+            # orig_value = self.builder.load(var_ptr)
+            orig_value = self.builder.extract_value(class_instance, attribute_index)  # Valeur directe
 
-        value = None
-        Type = None
-        match operator:
-            case '=':
-                value = right_value
-            case '+=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.add(orig_value, right_value)
-                else:
-                    value = self.builder.fadd(orig_value, right_value)
-            case '-=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.sub(orig_value, right_value)
-                else:
-                    value = self.builder.fsub(orig_value, right_value)
-            case '*=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.mul(orig_value, right_value)
-                else:
-                    value = self.builder.fmul(orig_value, right_value)
-            case '/=':
-                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                    value = self.builder.sdiv(orig_value, right_value)
-                else:
-                    value = self.builder.fdiv(orig_value, right_value)
-            case _:
-                print("Unsupported Assignment Operator")
 
-        ptr, _ = self.env.lookup(name)
-        self.builder.store(value, ptr)
+            right_value, right_type = self.resolve_value(value)
+
+            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+            if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                right_value = self.builder.sitofp(right_value, ir.FloatType())
+
+            value = None
+            match operator:
+                case '=':
+                    value = right_value
+                case '+=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.add(orig_value, right_value)
+                    else:
+                        value = self.builder.fadd(orig_value, right_value)
+                case '-=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.sub(orig_value, right_value)
+                    else:
+                        value = self.builder.fsub(orig_value, right_value)
+                case '*=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.mul(orig_value, right_value)
+                    else:
+                        value = self.builder.fmul(orig_value, right_value)
+                case '/=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.sdiv(orig_value, right_value)
+                    else:
+                        value = self.builder.fdiv(orig_value, right_value)
+                case _:
+                    print("Unsupported Assignment Operator")
+
+            # self.builder.insert_value(class_instance, value, attribute_index) # Pas besoin de stocker dans un pointeur
+            updated_instance = self.builder.insert_value(class_instance, value, attribute_index) # Insère la nouvelle valeur
+            self.env.define(class_instance_name, updated_instance, Type) # Et on remplace l'instance dans l'environment
+        else:
+            if self.env.lookup(name) is None:
+                self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned.")
+                return
+
+            var_ptr, _ = self.env.lookup(name)
+            orig_value = self.builder.load(var_ptr)
+
+            right_value, right_type = self.resolve_value(value)
+
+            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+            if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                right_value = self.builder.sitofp(right_value, ir.FloatType())
+
+            value = None
+            Type = None
+            match operator:
+                case '=':
+                    value = right_value
+                case '+=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.add(orig_value, right_value)
+                    else:
+                        value = self.builder.fadd(orig_value, right_value)
+                case '-=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.sub(orig_value, right_value)
+                    else:
+                        value = self.builder.fsub(orig_value, right_value)
+                case '*=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.mul(orig_value, right_value)
+                    else:
+                        value = self.builder.fmul(orig_value, right_value)
+                case '/=':
+                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
+                        value = self.builder.sdiv(orig_value, right_value)
+                    else:
+                        value = self.builder.fdiv(orig_value, right_value)
+                case _:
+                    print("Unsupported Assignment Operator")
+
+            ptr, _ = self.env.lookup(name)
+            self.builder.store(value, ptr)
 
     def visit_if_statement(self, node: IfStatement) -> None:
         condition = node.condition
@@ -408,6 +480,110 @@ class Compiler:
         self.compile(node=program)
 
         self.global_parsed_pallets[file_path] = program
+
+    def visit_method_statement(self, node: MethodClassStatement, class_type: ir.IdentifiedStructType) -> None:
+        name: str = node.name.value
+        body: BlockStatement = node.body
+        params: list[FunctionParameter] = node.parameters
+
+        # Keep track of the names of each parameter
+        param_names: list[str] = ["self"] + [p.name for p in params]
+
+        # Keep track of the types for each parameter
+        param_types: list[ir.Type] = [class_type] + [self.type_map[p.value_type] for p in params]
+
+        return_type: ir.Type = self.type_map[node.return_type]
+
+        fnty = ir.FunctionType(return_type, param_types)
+        func = ir.Function(self.module, fnty, name=f"{class_type.name}_{name}")
+
+        block: ir.Block = func.append_basic_block(f"{class_type.name}_{name}_entry")
+
+        previous_builder = self.builder
+        self.builder = ir.IRBuilder(block)
+
+        previous_env = self.env
+        self.env = Environment(parent=self.env)
+        self.env.define("self", func.args[0], class_type)
+
+        # Storing the pointers to each parameter
+        params_ptr = []
+        for i, typ in enumerate(param_types[1:]):
+            ptr = self.builder.alloca(typ)
+            self.builder.store(func.args[i + 1], ptr)
+            params_ptr.append(ptr)
+
+        # Adding the parameters to the environment
+        for i, x in enumerate(param_names[1:]):
+            self.env.define(x, params_ptr[i], param_types[i + 1])
+
+        self.env.define(f"{class_type.name}_{name}", func, return_type)
+
+        self.compile(body)
+
+        if return_type == ir.VoidType():
+            self.builder.ret_void()
+
+        self.env = previous_env
+        self.env.define(f"{class_type.name}_{name}", func, return_type)
+
+        self.builder = previous_builder
+
+    def visit_class_statement(self, node: ClassStatement) -> None:
+            class_name = node.name.value
+            fields = node.fields
+            methods = node.methods
+
+            # Création du type de classe
+            class_type = self.module.context.get_identified_type(class_name)
+            class_type.set_body(
+                *[self.type_map[field.value_type] for field in fields]
+            )
+
+            self.type_map[class_name] = class_type
+            self.declared_classes[class_name] = {
+                "fields": [
+                    {
+                        "name": field.name.value,
+                        "type": self.type_map[field.value_type]
+                    } for field in fields
+                ]
+            }
+
+            for method in methods:
+                self.visit_method_statement(method, class_type)
+
+            # Si la classe n'a pas de constructeur init
+            if not any(method.name.value == "init" for method in methods):  # Check for "init" correctly
+                # Modifier ici : Retourner directement l'instance au lieu d'un pointeur
+                func_type = ir.FunctionType(class_type, [])  # ⬅️ Retourne une instance
+                func = ir.Function(self.module, func_type, name=f"{class_name}_init")
+                self.env.define(f"{class_name}_init", func, class_type)  # Stocker le FunctionType
+
+                # Création du bloc d'entrée
+                block = func.append_basic_block(name=f"{class_name}_init_entry")
+                previous_builder = self.builder
+                self.builder = ir.IRBuilder(block)
+
+                previous_env = self.env
+                self.env = Environment(parent=self.env)
+
+                # Initialiser une structure vide
+                instance = ir.Constant(class_type, None)  # ⬅️ Instance vide
+                for i, field in enumerate(fields):
+                    field_type = self.type_map[field.value_type]
+                    if isinstance(field_type, ir.FloatType):
+                        default_value = ir.Constant(field_type, float(field_type.null))
+                    else:
+                        default_value = ir.Constant(field_type, field_type.null)
+                    instance = self.builder.insert_value(instance, default_value, i)
+
+                # Retourner directement la structure complète
+                self.builder.ret(instance)
+
+                # Rétablir le contexte
+                self.builder = previous_builder
+                self.env = previous_env
     # endregion
 
     # region Visit Expressions Methods
@@ -474,7 +650,6 @@ class Compiler:
             
         return value, Type
 
-    
     def visit_call_expression(self, node: CallExpression) -> tuple[ir.Instruction, ir.Type]:
         name: str = node.function.value
         params: list[Expression] = node.arguments
@@ -487,13 +662,29 @@ class Compiler:
                 args.append(p_val)
                 types.append(p_type)
 
-        match name:
-            case 'print':
-                ret = self.builtin_printf(params=args, return_type=types[0])
-                ret_type = self.type_map['int']
-            case _:
-                func, ret_type = self.env.lookup(name)
+        if name == "print":
+            ret = self.builtin_printf(params=args, return_type=types[0])
+            ret_type = self.type_map['int']
+        elif name == "init":
+            if self.is_let and not self.let_node is None:
+                func_name = f"{self.let_node.value_type}_init"
+                func, ret_type = self.env.lookup(func_name)
                 ret = self.builder.call(func, args)
+        elif "." in name:
+            class_instance, class_method = name.split(".")
+            data = self.env.lookup(class_instance)
+            if data is None:
+                self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {name} is not defined.")
+                return
+            value, Type = data
+            class_name = next((name for name, value_ in self.type_map.items() if value_ == Type))
+            class_method_name = f"{class_name}_{class_method}"
+            func, ret_type = self.env.lookup(class_method_name)
+            args = [value] + args
+            ret = self.builder.call(func, args)
+        else:
+            func, ret_type = self.env.lookup(name)
+            ret = self.builder.call(func, args)
 
         return ret, ret_type
     
@@ -564,12 +755,37 @@ class Compiler:
                 return ir.Constant(Type, value), Type
             case NodeType.IdentifierLiteral:
                 node: IdentifierLiteral = node
-                data = self.env.lookup(node.value)
-                if data is None:
-                    print(f"[line {node.line_no}] {node.value} is not defined.")
-                    sys.exit()
-                ptr, Type = data
-                return self.builder.load(ptr), Type
+                if "." in node.value:
+                    class_instance_name, attribute_name = node.value.split(".")
+                    class_instance, Type = self.env.lookup(class_instance_name)
+                    class_name = next((name for name, value_ in self.type_map.items() if value_ == Type))
+
+                    attribute_index = None
+                    for i, field in enumerate(self.declared_classes[class_name]["fields"]):
+                        if field["name"] == attribute_name:
+                            attribute_index = i
+
+                    # attribute_ptr = self.builder.extract_value(class_instance, attribute_index)
+                    # attribute_value = self.builder.load(attribute_ptr)
+                    attribute_value = self.builder.extract_value(class_instance, attribute_index)
+
+                    attribute_type = None
+                    for field in self.declared_classes[class_name]["fields"]:
+                        if field["name"] == attribute_name:
+                            attribute_type = field["type"]
+
+                    return attribute_value, attribute_type
+                else:
+                    data = self.env.lookup(node.value)
+                    if data is None:
+                        print(f"[line {node.line_no}] {node.value} is not defined.")
+                        sys.exit()
+                    ptr, Type = data
+
+                    if isinstance(Type, ir.IdentifiedStructType): # Si c'est une classe
+                        return ptr, Type  # Retourner la valeur directement, pas un pointeur
+                    else:
+                        return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:
                 node: BooleanLiteral = node
                 return ir.Constant(ir.IntType(1), 1 if node.value else 0), ir.IntType(1)
@@ -586,7 +802,7 @@ class Compiler:
             case NodeType.PrefixExpression:
                 return self.visit_prefix_expression(node)
 
-    def convert_string(self, string: str) -> tuple[ir.Constant, ir.ArrayType]:
+    def convert_string(self, string: str) -> tuple[ir.Constant, ir.PointerType]:
         string = string.replace('\\n', '\n\0')
 
         fmt = f"{string}\0"
@@ -598,7 +814,11 @@ class Compiler:
         global_fmt.global_constant = True
         global_fmt.initializer = c_fmt
 
-        return global_fmt, global_fmt.type
+        # Create a pointer to the first element of the string
+        zero = ir.Constant(ir.IntType(32), 0)
+        ptr = self.builder.gep(global_fmt, [zero, zero])
+
+        return ptr, ir.PointerType(ir.IntType(8))
 
     def builtin_printf(self, params: list[ir.Instruction], return_type: ir.Type) -> None:
         """ Basic C builtin printf with float support """
@@ -625,6 +845,5 @@ class Compiler:
             """ Printing from a normal string declared within printf """
             fmt_arg = self.builder.bitcast(self.module.get_global(f"__str_{self.counter}"), ir.IntType(8).as_pointer())
             return self.builder.call(func, [fmt_arg, *rest_params])
-
     # endregion Helper Methods
     

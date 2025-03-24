@@ -2,29 +2,171 @@
     "type": "Program",
     "statements": [
         {
+            "ImportStatement": {
+                "type": "ImportStatement",
+                "file_path": "math/mod"
+            }
+        },
+        {
+            "ClassStatement": {
+                "type": "ClassStatement",
+                "name": {
+                    "type": "IdentifierLiteral",
+                    "value": "Person"
+                },
+                "fields": [
+                    {
+                        "type": "ClassFieldStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "name"
+                        },
+                        "value_type": "string",
+                        "scope": "public"
+                    },
+                    {
+                        "type": "ClassFieldStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "age"
+                        },
+                        "value_type": "int",
+                        "scope": "public"
+                    }
+                ],
+                "methods": [
+                    {
+                        "type": "ClassMethodStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "greet"
+                        },
+                        "return_type": "void",
+                        "parameters": [
+                            {
+                                "type": "FunctionParameter",
+                                "name": "message",
+                                "value_type": "string"
+                            }
+                        ],
+                        "body": {
+                            "type": "BlockStatement",
+                            "statements": [
+                                {
+                                    "type": "ExpressionStatement",
+                                    "expr": {
+                                        "type": "CallExpression",
+                                        "function": {
+                                            "type": "IdentifierLiteral",
+                                            "value": "print"
+                                        },
+                                        "arguments": [
+                                            {
+                                                "type": "StringLiteral",
+                                                "value": "%s, I am %s.\\n"
+                                            },
+                                            {
+                                                "type": "IdentifierLiteral",
+                                                "value": "message"
+                                            },
+                                            {
+                                                "type": "IdentifierLiteral",
+                                                "value": "self.name"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "type": "ExpressionStatement",
+                                    "expr": {
+                                        "type": "CallExpression",
+                                        "function": {
+                                            "type": "IdentifierLiteral",
+                                            "value": "print"
+                                        },
+                                        "arguments": [
+                                            {
+                                                "type": "StringLiteral",
+                                                "value": "I am %i years old.\\n"
+                                            },
+                                            {
+                                                "type": "IdentifierLiteral",
+                                                "value": "self.age"
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        "scope": "public"
+                    }
+                ]
+            }
+        },
+        {
             "FunctionStatement": {
                 "type": "FunctionStatement",
                 "name": {
                     "type": "IdentifierLiteral",
                     "value": "main"
                 },
-                "return_type": "int32",
+                "return_type": "int",
                 "parameters": [],
                 "body": {
                     "type": "BlockStatement",
                     "statements": [
+                        {
+                            "type": "LetStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "person"
+                            },
+                            "value": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "init"
+                                },
+                                "arguments": []
+                            },
+                            "value_type": "Person"
+                        },
+                        {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "person.name"
+                            },
+                            "operator": "=",
+                            "right_value": {
+                                "type": "StringLiteral",
+                                "value": "Ethan"
+                            }
+                        },
+                        {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "person.age"
+                            },
+                            "operator": "=",
+                            "right_value": {
+                                "type": "IntegerLiteral",
+                                "value": 21
+                            }
+                        },
                         {
                             "type": "ExpressionStatement",
                             "expr": {
                                 "type": "CallExpression",
                                 "function": {
                                     "type": "IdentifierLiteral",
-                                    "value": "print"
+                                    "value": "person.greet"
                                 },
                                 "arguments": [
                                     {
                                         "type": "StringLiteral",
-                                        "value": "Hello, World!"
+                                        "value": "Hello"
                                     }
                                 ]
                             }

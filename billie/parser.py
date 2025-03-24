@@ -1,11 +1,12 @@
 from billie.lexer import Lexer
-from billie.token import Token, TokenType
+from billie.token import TYPE_KEYWORDS, Token, TokenType
 from typing import Callable, Optional
 from enum import Enum, auto
 
 from billie.ast import Statement, Expression, Program
-from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, IfStatement
-from billie.ast import WhileStatement, BreakStatement, ContinueStatement, ForStatement, ImportStatement
+from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement
+from billie.ast import AssignStatement, IfStatement, WhileStatement, BreakStatement, ContinueStatement, ForStatement, ImportStatement
+from billie.ast import FieldClassStatement, MethodClassStatement, ClassStatement
 from billie.ast import InfixExpression, CallExpression, PrefixExpression, PostfixExpression
 from billie.ast import IntegerLiteral, FloatLiteral, IdentifierLiteral, BooleanLiteral, StringLiteral
 from billie.ast import FunctionParameter
@@ -67,7 +68,7 @@ class Parser:
             TokenType.FALSE: self.parse_boolean,
             TokenType.STRING: self.parse_string_literal,
             TokenType.MINUS: self.parse_prefix_expression,
-            TokenType.BANG: self.parse_prefix_expression,
+            TokenType.BANG: self.parse_prefix_expression
         }
 
         self.infix_parse_fns: dict[TokenType, Callable] = {
@@ -116,6 +117,22 @@ class Parser:
         ]
         return self.peek_token.type in assignment_operators
     
+    def peek_token_is_scope(self) -> bool:
+        scopes: list[TokenType] = [
+            TokenType.PUBLIC,
+            TokenType.PROTECTED,
+            TokenType.PRIVATE
+        ]
+        return self.peek_token.type in scopes
+    
+    def current_token_is_scope(self) -> bool:
+        scopes: list[TokenType] = [
+            TokenType.PUBLIC,
+            TokenType.PROTECTED,
+            TokenType.PRIVATE
+        ]
+        return self.current_token.type in scopes
+    
     def expect_peek(self, tt: TokenType) -> bool:
         if self.peek_token_is(tt):
             self.next_token()
@@ -140,7 +157,7 @@ class Parser:
         self.errors.append(f"[line {self.peek_token.line_no}] Expected next token to be {tt}, got {self.peek_token.type} ({self.peek_token.literal}) instead.")
 
     def no_prefix_parse_fn_error(self, tt: TokenType):
-        self.errors.append(f"[line {self.current_token.line_no}] No Prefix Parse Function for {tt} found")
+        self.errors.append(f"[line {self.current_token.line_no}] No Prefix Parse Function for {tt} ({self.current_token.literal}) found")
 
     def parse_program(self) -> Program:
         """ Main execution entry to the Parser """
@@ -179,6 +196,8 @@ class Parser:
                 return self.parse_for_statement()
             case TokenType.IMPORT:
                 return self.parse_import_statement()
+            case TokenType.CLASS:
+                return self.parse_class_statement()
             case _:
                 return self.parse_expression_statement()
     
@@ -439,6 +458,91 @@ class Parser:
             return None
         
         return stmt
+    
+    def parse_class_statement(self) -> ClassStatement:
+        stmt = ClassStatement(self.current_token.line_no)
+
+        self.next_token()  # Skips 'class' keyword
+
+        stmt.name = IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
+        if not self.expect_peek(TokenType.LBRACE):
+            return None
+
+        self.next_token()  # Skips '{'
+
+        while not self.current_token_is(TokenType.RBRACE):  # Loop until closing brace
+            if not self.current_token_is_scope():
+                return None # Or raise an exception, depending on desired error handling.
+
+            if self.peek_token_is(TokenType.IDENT):
+                field = self.parse_class_field()  # Delegate field parsing to a separate function
+                if field is None:
+                    return None  # Error in field parsing
+                stmt.fields.append(field)
+
+                if self.current_token_is(TokenType.SEMICOLON):
+                    self.next_token() # Skip semicolon
+
+            elif self.peek_token_is(TokenType.FUNCTION):
+                method = self.parse_class_method()
+                if method is None:
+                    return None
+                stmt.methods.append(method)
+                
+        if len(stmt.methods) > 0:
+            if not self.expect_peek(TokenType.RBRACE):
+                return None
+
+        TYPE_KEYWORDS.append(stmt.name.value)
+        return stmt
+
+    def parse_class_field(self) -> FieldClassStatement:
+        field = FieldClassStatement(self.current_token.line_no)
+        field.scope = self.current_token.literal
+
+        if not self.expect_peek(TokenType.IDENT):
+            return None
+        field.name = IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
+
+        if not self.expect_peek(TokenType.COLON):
+            return None
+
+        if not self.expect_peek(TokenType.TYPE):
+            return None
+        field.value_type = self.current_token.literal
+        self.next_token() # Consume the type
+        return field
+    
+    def parse_class_method(self) -> MethodClassStatement:
+        method = MethodClassStatement(self.current_token.line_no)
+        method.scope = self.current_token.literal
+
+        if not self.expect_peek(TokenType.FUNCTION):
+            return None
+        
+        if not self.expect_peek(TokenType.IDENT):
+            return None
+        
+        method.name = IdentifierLiteral(line_no=self.current_token.line_no, value=self.current_token.literal)
+
+        if not self.expect_peek(TokenType.LPAREN):
+            return None
+
+        method.parameters = self.parse_function_parameters()
+
+        if not self.expect_peek(TokenType.ARROW):
+            return None
+        
+        self.next_token()
+
+        method.return_type = self.current_token.literal
+
+        if not self.expect_peek(TokenType.LBRACE):
+            return None
+        
+        method.body = self.parse_block_statement()
+
+        return method
     #endregion
 
     # region Expression Methods
@@ -449,6 +553,9 @@ class Parser:
             return None
         
         left_expr: Expression = prefix_fn()
+        if self.current_token.type == TokenType.TYPE and self.current_token.literal in TYPE_KEYWORDS:
+            return left_expr
+
         while not self.peek_token_is(TokenType.SEMICOLON) and precedence.value < self.peek_precedence().value:
             infix_fn: Optional[Callable] = self.infix_parse_fns.get(self.peek_token.type)
             if infix_fn is None:

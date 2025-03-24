@@ -1,0 +1,5 @@
+class Vector3f {
+    public x: float;
+    public y: float;
+    public z: float;
+}
