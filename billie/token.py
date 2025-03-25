@@ -126,7 +126,7 @@ def lookup_ident(ident: str) -> TokenType:
     if tt is not None:
         return tt
     
-    if ident in TYPE_KEYWORDS:
+    if ident in TYPE_KEYWORDS  or ident[0].isupper():
         return TokenType.TYPE
     
     return TokenType.IDENT

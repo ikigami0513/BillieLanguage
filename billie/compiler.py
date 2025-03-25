@@ -17,6 +17,7 @@ from billie.lexer import Lexer
 from billie.parser import Parser
 
 from billie import settings
+from billie.token import TYPE_KEYWORDS
 
 
 class Compiler:
@@ -156,11 +157,7 @@ class Compiler:
         if self.env.lookup(name) is None:
             # Define and allocate the variable
             if node.value_type in self.declared_classes.keys():
-                # Type: ir.FunctionType = Type  <- Plus nécessaire, Type est maintenant la structure elle-même
-                # ptr = self.builder.alloca(Type.return_type) <- Plus d'alloca
-                # Storing the value to the pointer <- Plus de store
-                # self.builder.store(value_, ptr)
-                self.env.define(name, value_, Type) # On stocke la valeur, pas un pointeur!
+                self.env.define(name, value_, Type)
             else:
                 ptr = self.builder.alloca(Type)
                 self.builder.store(value_, ptr)
@@ -252,9 +249,8 @@ class Compiler:
 
         if "." in name:
             class_instance_name, attribute_name = name.split(".")
-            class_instance, Type = self.env.lookup(class_instance_name) # C'est la valeur, pas un pointeur
-            # class_instance = self.builder.load(class_instance_ptr)  <- Plus besoin de charger!
-            class_name = next((name for name, value_ in self.type_map.items() if value_ == Type)) # Type, pas Type.return_type
+            class_instance, Type = self.env.lookup(class_instance_name)
+            class_name = next((name for name, value_ in self.type_map.items() if value_ == Type))
 
             attribute_index = None
             for i, field in enumerate(self.declared_classes[class_name]["fields"]):
@@ -550,9 +546,6 @@ class Compiler:
                 ]
             }
 
-            for method in methods:
-                self.visit_method_statement(method, class_type)
-
             # Si la classe n'a pas de constructeur init
             if not any(method.name.value == "init" for method in methods):  # Check for "init" correctly
                 # Modifier ici : Retourner directement l'instance au lieu d'un pointeur
@@ -584,6 +577,9 @@ class Compiler:
                 # Rétablir le contexte
                 self.builder = previous_builder
                 self.env = previous_env
+
+            for method in methods:
+                self.visit_method_statement(method, class_type)
     # endregion
 
     # region Visit Expressions Methods
@@ -765,9 +761,10 @@ class Compiler:
                         if field["name"] == attribute_name:
                             attribute_index = i
 
-                    # attribute_ptr = self.builder.extract_value(class_instance, attribute_index)
-                    # attribute_value = self.builder.load(attribute_ptr)
-                    attribute_value = self.builder.extract_value(class_instance, attribute_index)
+                    if isinstance(class_instance, ir.AllocaInstr):
+                        attribute_value = self.builder.extract_value(self.builder.load(class_instance), attribute_index)
+                    else:
+                        attribute_value = self.builder.extract_value(class_instance, attribute_index)
 
                     attribute_type = None
                     for field in self.declared_classes[class_name]["fields"]:

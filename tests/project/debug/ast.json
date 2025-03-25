@@ -172,6 +172,131 @@
                             }
                         },
                         {
+                            "type": "LetStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "a"
+                            },
+                            "value": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "init"
+                                },
+                                "arguments": []
+                            },
+                            "value_type": "Vector2i"
+                        },
+                        {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "a.x"
+                            },
+                            "operator": "=",
+                            "right_value": {
+                                "type": "IntegerLiteral",
+                                "value": 2
+                            }
+                        },
+                        {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "a.y"
+                            },
+                            "operator": "=",
+                            "right_value": {
+                                "type": "IntegerLiteral",
+                                "value": 3
+                            }
+                        },
+                        {
+                            "type": "LetStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "b"
+                            },
+                            "value": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "init"
+                                },
+                                "arguments": []
+                            },
+                            "value_type": "Vector2i"
+                        },
+                        {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "b.x"
+                            },
+                            "operator": "=",
+                            "right_value": {
+                                "type": "IntegerLiteral",
+                                "value": 12
+                            }
+                        },
+                        {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "b.y"
+                            },
+                            "operator": "=",
+                            "right_value": {
+                                "type": "IntegerLiteral",
+                                "value": 13
+                            }
+                        },
+                        {
+                            "type": "LetStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "c"
+                            },
+                            "value": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "a.add"
+                                },
+                                "arguments": [
+                                    {
+                                        "type": "IdentifierLiteral",
+                                        "value": "b"
+                                    }
+                                ]
+                            },
+                            "value_type": "Vector2i"
+                        },
+                        {
+                            "type": "ExpressionStatement",
+                            "expr": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "print"
+                                },
+                                "arguments": [
+                                    {
+                                        "type": "StringLiteral",
+                                        "value": "%i %i"
+                                    },
+                                    {
+                                        "type": "IdentifierLiteral",
+                                        "value": "c.x"
+                                    },
+                                    {
+                                        "type": "IdentifierLiteral",
+                                        "value": "c.y"
+                                    }
+                                ]
+                            }
+                        },
+                        {
                             "type": "ReturnStatement",
                             "return_value": {
                                 "type": "IntegerLiteral",

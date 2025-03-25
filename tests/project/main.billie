@@ -15,5 +15,16 @@ function main() -> int {
     person.name = "Ethan";
     person.age = 21;
     person.greet("Hello");
+
+    let a: Vector2i = init();
+    a.x = 2;
+    a.y = 3;
+
+    let b: Vector2i = init();
+    b.x = 12;
+    b.y = 13;
+
+    let c: Vector2i = a.add(b);
+    print("%i %i", c.x, c.y);
     return 0;
 }

@@ -1,4 +1,43 @@
+import "math/exponentials";
+
 class Vector2i {
     public x: int;
     public y: int;
+
+    public function add(other: Vector2i) -> Vector2i {
+        let result: Vector2i = init();
+        result.x = self.x + other.x;
+        result.y = self.y + other.y;
+        return result;
+    }
+
+    public function sub(other: Vector2i) -> Vector2i {
+        let result: Vector2i = init();
+        result.x = self.x - other.x;
+        result.y = self.y - other.y;
+        return result;
+    }
+
+    public function mul(scalar: int) -> Vector2i {
+        let result: Vector2i = init();
+        result.x = self.x * scalar;
+        result.y = self.y * scalar;
+        return result;
+    }
+
+    public function div(scalar: int) -> Vector2i {
+        if scalar == 0 {
+            print("Error: Division by zero.\n");
+            return self;
+        }
+
+        let result: Vector2i = init();
+        result.x = self.x / scalar;
+        result.y = self.y / scalar;
+        return result;
+    }
+
+    public function equals(other: Vector2i) -> bool {
+        return (self.x == other.x) && (self.y == other.y);
+    }
 }

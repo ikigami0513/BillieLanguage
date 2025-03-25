@@ -488,10 +488,6 @@ class Parser:
                 if method is None:
                     return None
                 stmt.methods.append(method)
-                
-        if len(stmt.methods) > 0:
-            if not self.expect_peek(TokenType.RBRACE):
-                return None
 
         TYPE_KEYWORDS.append(stmt.name.value)
         return stmt
@@ -541,6 +537,8 @@ class Parser:
             return None
         
         method.body = self.parse_block_statement()
+
+        self.next_token()
 
         return method
     #endregion

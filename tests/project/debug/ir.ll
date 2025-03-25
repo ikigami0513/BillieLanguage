@@ -595,6 +595,115 @@ Vector2i_init_entry:
   ret %"Vector2i" %".3"
 }
 
+define %"Vector2i" @"Vector2i_add"(%"Vector2i" %".1", %"Vector2i" %".2")
+{
+Vector2i_add_entry:
+  %".4" = alloca %"Vector2i"
+  store %"Vector2i" %".2", %"Vector2i"* %".4"
+  %".6" = call %"Vector2i" @"Vector2i_init"()
+  %".7" = extractvalue %"Vector2i" %".6", 0
+  %".8" = extractvalue %"Vector2i" %".1", 0
+  %".9" = load %"Vector2i", %"Vector2i"* %".4"
+  %".10" = extractvalue %"Vector2i" %".9", 0
+  %".11" = add i64 %".8", %".10"
+  %".12" = insertvalue %"Vector2i" %".6", i64 %".11", 0
+  %".13" = extractvalue %"Vector2i" %".12", 1
+  %".14" = extractvalue %"Vector2i" %".1", 1
+  %".15" = load %"Vector2i", %"Vector2i"* %".4"
+  %".16" = extractvalue %"Vector2i" %".15", 1
+  %".17" = add i64 %".14", %".16"
+  %".18" = insertvalue %"Vector2i" %".12", i64 %".17", 1
+  ret %"Vector2i" %".18"
+}
+
+define %"Vector2i" @"Vector2i_sub"(%"Vector2i" %".1", %"Vector2i" %".2")
+{
+Vector2i_sub_entry:
+  %".4" = alloca %"Vector2i"
+  store %"Vector2i" %".2", %"Vector2i"* %".4"
+  %".6" = call %"Vector2i" @"Vector2i_init"()
+  %".7" = extractvalue %"Vector2i" %".6", 0
+  %".8" = extractvalue %"Vector2i" %".1", 0
+  %".9" = load %"Vector2i", %"Vector2i"* %".4"
+  %".10" = extractvalue %"Vector2i" %".9", 0
+  %".11" = sub i64 %".8", %".10"
+  %".12" = insertvalue %"Vector2i" %".6", i64 %".11", 0
+  %".13" = extractvalue %"Vector2i" %".12", 1
+  %".14" = extractvalue %"Vector2i" %".1", 1
+  %".15" = load %"Vector2i", %"Vector2i"* %".4"
+  %".16" = extractvalue %"Vector2i" %".15", 1
+  %".17" = sub i64 %".14", %".16"
+  %".18" = insertvalue %"Vector2i" %".12", i64 %".17", 1
+  ret %"Vector2i" %".18"
+}
+
+define %"Vector2i" @"Vector2i_mul"(%"Vector2i" %".1", i64 %".2")
+{
+Vector2i_mul_entry:
+  %".4" = alloca i64
+  store i64 %".2", i64* %".4"
+  %".6" = call %"Vector2i" @"Vector2i_init"()
+  %".7" = extractvalue %"Vector2i" %".6", 0
+  %".8" = extractvalue %"Vector2i" %".1", 0
+  %".9" = load i64, i64* %".4"
+  %".10" = mul i64 %".8", %".9"
+  %".11" = insertvalue %"Vector2i" %".6", i64 %".10", 0
+  %".12" = extractvalue %"Vector2i" %".11", 1
+  %".13" = extractvalue %"Vector2i" %".1", 1
+  %".14" = load i64, i64* %".4"
+  %".15" = mul i64 %".13", %".14"
+  %".16" = insertvalue %"Vector2i" %".11", i64 %".15", 1
+  ret %"Vector2i" %".16"
+}
+
+define %"Vector2i" @"Vector2i_div"(%"Vector2i" %".1", i64 %".2")
+{
+Vector2i_div_entry:
+  %".4" = alloca i64
+  store i64 %".2", i64* %".4"
+  %".6" = load i64, i64* %".4"
+  %".7" = icmp eq i64 %".6", 0
+  br i1 %".7", label %"Vector2i_div_entry.if", label %"Vector2i_div_entry.endif"
+Vector2i_div_entry.if:
+  %".9" = getelementptr [27 x i8], [27 x i8]* @"__str_9", i32 0, i32 0
+  %".10" = alloca i8*
+  store i8* %".9", i8** %".10"
+  %".12" = bitcast [27 x i8]* @"__str_9" to i8*
+  %".13" = call i64 (i8*, ...) @"printf"(i8* %".12")
+  ret %"Vector2i" %".1"
+Vector2i_div_entry.endif:
+  %".15" = call %"Vector2i" @"Vector2i_init"()
+  %".16" = extractvalue %"Vector2i" %".15", 0
+  %".17" = extractvalue %"Vector2i" %".1", 0
+  %".18" = load i64, i64* %".4"
+  %".19" = sdiv i64 %".17", %".18"
+  %".20" = insertvalue %"Vector2i" %".15", i64 %".19", 0
+  %".21" = extractvalue %"Vector2i" %".20", 1
+  %".22" = extractvalue %"Vector2i" %".1", 1
+  %".23" = load i64, i64* %".4"
+  %".24" = sdiv i64 %".22", %".23"
+  %".25" = insertvalue %"Vector2i" %".20", i64 %".24", 1
+  ret %"Vector2i" %".25"
+}
+
+@"__str_9" = internal constant [27 x i8] c"Error: Division by zero.\0a\00\00"
+define i1 @"Vector2i_equals"(%"Vector2i" %".1", %"Vector2i" %".2")
+{
+Vector2i_equals_entry:
+  %".4" = alloca %"Vector2i"
+  store %"Vector2i" %".2", %"Vector2i"* %".4"
+  %".6" = extractvalue %"Vector2i" %".1", 0
+  %".7" = load %"Vector2i", %"Vector2i"* %".4"
+  %".8" = extractvalue %"Vector2i" %".7", 0
+  %".9" = icmp eq i64 %".6", %".8"
+  %".10" = extractvalue %"Vector2i" %".1", 1
+  %".11" = load %"Vector2i", %"Vector2i"* %".4"
+  %".12" = extractvalue %"Vector2i" %".11", 1
+  %".13" = icmp eq i64 %".10", %".12"
+  %".14" = and i1 %".9", %".13"
+  ret i1 %".14"
+}
+
 define %"Vector3i" @"Vector3i_init"()
 {
 Vector3i_init_entry:
@@ -621,29 +730,6 @@ Vector3f_init_entry:
   ret %"Vector3f" %".4"
 }
 
-define void @"Person_greet"(%"Person" %".1", i8* %".2")
-{
-Person_greet_entry:
-  %".4" = alloca i8*
-  store i8* %".2", i8** %".4"
-  %".6" = getelementptr [15 x i8], [15 x i8]* @"__str_9", i32 0, i32 0
-  %".7" = load i8*, i8** %".4"
-  %".8" = extractvalue %"Person" %".1", 0
-  %".9" = alloca i8*
-  store i8* %".6", i8** %".9"
-  %".11" = bitcast [15 x i8]* @"__str_9" to i8*
-  %".12" = call i64 (i8*, ...) @"printf"(i8* %".11", i8* %".7", i8* %".8")
-  %".13" = getelementptr [21 x i8], [21 x i8]* @"__str_10", i32 0, i32 0
-  %".14" = extractvalue %"Person" %".1", 1
-  %".15" = alloca i8*
-  store i8* %".13", i8** %".15"
-  %".17" = bitcast [21 x i8]* @"__str_10" to i8*
-  %".18" = call i64 (i8*, ...) @"printf"(i8* %".17", i64 %".14")
-  ret void
-}
-
-@"__str_9" = internal constant [15 x i8] c"%s, I am %s.\0a\00\00"
-@"__str_10" = internal constant [21 x i8] c"I am %i years old.\0a\00\00"
 define %"Person" @"Person_init"()
 {
 Person_init_entry:
@@ -652,19 +738,61 @@ Person_init_entry:
   ret %"Person" %".3"
 }
 
+define void @"Person_greet"(%"Person" %".1", i8* %".2")
+{
+Person_greet_entry:
+  %".4" = alloca i8*
+  store i8* %".2", i8** %".4"
+  %".6" = getelementptr [15 x i8], [15 x i8]* @"__str_10", i32 0, i32 0
+  %".7" = load i8*, i8** %".4"
+  %".8" = extractvalue %"Person" %".1", 0
+  %".9" = alloca i8*
+  store i8* %".6", i8** %".9"
+  %".11" = bitcast [15 x i8]* @"__str_10" to i8*
+  %".12" = call i64 (i8*, ...) @"printf"(i8* %".11", i8* %".7", i8* %".8")
+  %".13" = getelementptr [21 x i8], [21 x i8]* @"__str_11", i32 0, i32 0
+  %".14" = extractvalue %"Person" %".1", 1
+  %".15" = alloca i8*
+  store i8* %".13", i8** %".15"
+  %".17" = bitcast [21 x i8]* @"__str_11" to i8*
+  %".18" = call i64 (i8*, ...) @"printf"(i8* %".17", i64 %".14")
+  ret void
+}
+
+@"__str_10" = internal constant [15 x i8] c"%s, I am %s.\0a\00\00"
+@"__str_11" = internal constant [21 x i8] c"I am %i years old.\0a\00\00"
 define i64 @"main"()
 {
 main_entry:
   %".2" = call %"Person" @"Person_init"()
   %".3" = extractvalue %"Person" %".2", 0
-  %".4" = getelementptr [6 x i8], [6 x i8]* @"__str_11", i32 0, i32 0
+  %".4" = getelementptr [6 x i8], [6 x i8]* @"__str_12", i32 0, i32 0
   %".5" = insertvalue %"Person" %".2", i8* %".4", 0
   %".6" = extractvalue %"Person" %".5", 1
   %".7" = insertvalue %"Person" %".5", i64 21, 1
-  %".8" = getelementptr [6 x i8], [6 x i8]* @"__str_12", i32 0, i32 0
+  %".8" = getelementptr [6 x i8], [6 x i8]* @"__str_13", i32 0, i32 0
   call void @"Person_greet"(%"Person" %".7", i8* %".8")
+  %".10" = call %"Vector2i" @"Vector2i_init"()
+  %".11" = extractvalue %"Vector2i" %".10", 0
+  %".12" = insertvalue %"Vector2i" %".10", i64 2, 0
+  %".13" = extractvalue %"Vector2i" %".12", 1
+  %".14" = insertvalue %"Vector2i" %".12", i64 3, 1
+  %".15" = call %"Vector2i" @"Vector2i_init"()
+  %".16" = extractvalue %"Vector2i" %".15", 0
+  %".17" = insertvalue %"Vector2i" %".15", i64 12, 0
+  %".18" = extractvalue %"Vector2i" %".17", 1
+  %".19" = insertvalue %"Vector2i" %".17", i64 13, 1
+  %".20" = call %"Vector2i" @"Vector2i_add"(%"Vector2i" %".14", %"Vector2i" %".19")
+  %".21" = getelementptr [6 x i8], [6 x i8]* @"__str_14", i32 0, i32 0
+  %".22" = extractvalue %"Vector2i" %".20", 0
+  %".23" = extractvalue %"Vector2i" %".20", 1
+  %".24" = alloca i8*
+  store i8* %".21", i8** %".24"
+  %".26" = bitcast [6 x i8]* @"__str_14" to i8*
+  %".27" = call i64 (i8*, ...) @"printf"(i8* %".26", i64 %".22", i64 %".23")
   ret i64 0
 }
 
-@"__str_11" = internal constant [6 x i8] c"Ethan\00"
-@"__str_12" = internal constant [6 x i8] c"Hello\00"
+@"__str_12" = internal constant [6 x i8] c"Ethan\00"
+@"__str_13" = internal constant [6 x i8] c"Hello\00"
+@"__str_14" = internal constant [6 x i8] c"%i %i\00"
