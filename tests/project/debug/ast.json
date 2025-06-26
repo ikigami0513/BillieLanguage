@@ -2,12 +2,6 @@
     "type": "Program",
     "statements": [
         {
-            "ImportStatement": {
-                "type": "ImportStatement",
-                "file_path": "math/mod"
-            }
-        },
-        {
             "ClassStatement": {
                 "type": "ClassStatement",
                 "name": {
@@ -19,7 +13,16 @@
                         "type": "ClassFieldStatement",
                         "name": {
                             "type": "IdentifierLiteral",
-                            "value": "name"
+                            "value": "first_name"
+                        },
+                        "value_type": "string",
+                        "scope": "public"
+                    },
+                    {
+                        "type": "ClassFieldStatement",
+                        "name": {
+                            "type": "IdentifierLiteral",
+                            "value": "last_name"
                         },
                         "value_type": "string",
                         "scope": "public"
@@ -63,7 +66,7 @@
                                         "arguments": [
                                             {
                                                 "type": "StringLiteral",
-                                                "value": "%s, I am %s.\\n"
+                                                "value": "%s, I am %s %s.\\n"
                                             },
                                             {
                                                 "type": "IdentifierLiteral",
@@ -71,7 +74,11 @@
                                             },
                                             {
                                                 "type": "IdentifierLiteral",
-                                                "value": "self.name"
+                                                "value": "self.first_name"
+                                            },
+                                            {
+                                                "type": "IdentifierLiteral",
+                                                "value": "self.last_name"
                                             }
                                         ]
                                     }
@@ -132,15 +139,75 @@
                             "value_type": "Person"
                         },
                         {
+                            "type": "ExpressionStatement",
+                            "expr": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "print"
+                                },
+                                "arguments": [
+                                    {
+                                        "type": "StringLiteral",
+                                        "value": "Your name ?\\n"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "type": "LetStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "name"
+                            },
+                            "value": {
+                                "type": "StringLiteral",
+                                "value": ""
+                            },
+                            "value_type": "string"
+                        },
+                        {
+                            "type": "ExpressionStatement",
+                            "expr": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "scan"
+                                },
+                                "arguments": [
+                                    {
+                                        "type": "StringLiteral",
+                                        "value": "%s"
+                                    },
+                                    {
+                                        "type": "IdentifierLiteral",
+                                        "value": "name"
+                                    }
+                                ]
+                            }
+                        },
+                        {
                             "type": "AssignStatement",
                             "ident": {
                                 "type": "IdentifierLiteral",
-                                "value": "person.name"
+                                "value": "person.first_name"
+                            },
+                            "operator": "=",
+                            "right_value": {
+                                "type": "IdentifierLiteral",
+                                "value": "name"
+                            }
+                        },
+                        {
+                            "type": "AssignStatement",
+                            "ident": {
+                                "type": "IdentifierLiteral",
+                                "value": "person.last_name"
                             },
                             "operator": "=",
                             "right_value": {
                                 "type": "StringLiteral",
-                                "value": "Ethan"
+                                "value": "Rucar"
                             }
                         },
                         {
@@ -167,131 +234,6 @@
                                     {
                                         "type": "StringLiteral",
                                         "value": "Hello"
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            "type": "LetStatement",
-                            "name": {
-                                "type": "IdentifierLiteral",
-                                "value": "a"
-                            },
-                            "value": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "init"
-                                },
-                                "arguments": []
-                            },
-                            "value_type": "Vector2i"
-                        },
-                        {
-                            "type": "AssignStatement",
-                            "ident": {
-                                "type": "IdentifierLiteral",
-                                "value": "a.x"
-                            },
-                            "operator": "=",
-                            "right_value": {
-                                "type": "IntegerLiteral",
-                                "value": 2
-                            }
-                        },
-                        {
-                            "type": "AssignStatement",
-                            "ident": {
-                                "type": "IdentifierLiteral",
-                                "value": "a.y"
-                            },
-                            "operator": "=",
-                            "right_value": {
-                                "type": "IntegerLiteral",
-                                "value": 3
-                            }
-                        },
-                        {
-                            "type": "LetStatement",
-                            "name": {
-                                "type": "IdentifierLiteral",
-                                "value": "b"
-                            },
-                            "value": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "init"
-                                },
-                                "arguments": []
-                            },
-                            "value_type": "Vector2i"
-                        },
-                        {
-                            "type": "AssignStatement",
-                            "ident": {
-                                "type": "IdentifierLiteral",
-                                "value": "b.x"
-                            },
-                            "operator": "=",
-                            "right_value": {
-                                "type": "IntegerLiteral",
-                                "value": 12
-                            }
-                        },
-                        {
-                            "type": "AssignStatement",
-                            "ident": {
-                                "type": "IdentifierLiteral",
-                                "value": "b.y"
-                            },
-                            "operator": "=",
-                            "right_value": {
-                                "type": "IntegerLiteral",
-                                "value": 13
-                            }
-                        },
-                        {
-                            "type": "LetStatement",
-                            "name": {
-                                "type": "IdentifierLiteral",
-                                "value": "c"
-                            },
-                            "value": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "a.add"
-                                },
-                                "arguments": [
-                                    {
-                                        "type": "IdentifierLiteral",
-                                        "value": "b"
-                                    }
-                                ]
-                            },
-                            "value_type": "Vector2i"
-                        },
-                        {
-                            "type": "ExpressionStatement",
-                            "expr": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "print"
-                                },
-                                "arguments": [
-                                    {
-                                        "type": "StringLiteral",
-                                        "value": "%i %i"
-                                    },
-                                    {
-                                        "type": "IdentifierLiteral",
-                                        "value": "c.x"
-                                    },
-                                    {
-                                        "type": "IdentifierLiteral",
-                                        "value": "c.y"
                                     }
                                 ]
                             }

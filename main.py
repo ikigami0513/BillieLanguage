@@ -1,6 +1,6 @@
 from billie.lexer import Lexer
 from billie.parser import Parser
-from billie.compiler import Compiler
+from billie.compiler.compiler import Compiler
 from billie.ast import Program
 from billie import settings
 import json

@@ -1,30 +1,27 @@
-import "math/mod";
-
 class Person {
-    public name: string;
+    public first_name: string;
+    public last_name: string;
     public age: int;
 
     public function greet(message: string) -> void {
-        print("%s, I am %s.\n", message, self.name);
+        print(
+            "%s, I am %s %s.\n", 
+            message, 
+            self.first_name,
+            self.last_name
+        );
         print("I am %i years old.\n", self.age);
     }
 }
 
 function main() -> int {
     let person: Person = init();
-    person.name = "Ethan";
+    print("Your name ?\n");
+    let name: string = "";
+    scan("%s", name);
+    person.first_name = name;
+    person.last_name = "Rucar";
     person.age = 21;
     person.greet("Hello");
-
-    let a: Vector2i = init();
-    a.x = 2;
-    a.y = 3;
-
-    let b: Vector2i = init();
-    b.x = 12;
-    b.y = 13;
-
-    let c: Vector2i = a.add(b);
-    print("%i %i", c.x, c.y);
     return 0;
 }

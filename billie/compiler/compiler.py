@@ -3,6 +3,9 @@ import os
 import sys
 from typing import Any, Optional
 
+from billie.compiler.types import TYPE_MAP
+from billie.compiler import builtins
+
 from billie.ast import Node, NodeType, Program, Expression
 from billie.ast import ExpressionStatement, LetStatement, ConstStatement, FunctionStatement, ReturnStatement, BlockStatement
 from billie.ast import AssignStatement, IfStatement, WhileStatement, ContinueStatement, BreakStatement, ForStatement, ImportStatement
@@ -17,19 +20,10 @@ from billie.lexer import Lexer
 from billie.parser import Parser
 
 from billie import settings
-from billie.token import TYPE_KEYWORDS
 
 
 class Compiler:
     def __init__(self) -> None:
-        self.type_map: dict[str, ir.Type] = {
-            'int': ir.IntType(64),
-            'float': ir.FloatType(),
-            'bool': ir.IntType(1),
-            'void': ir.VoidType(),
-            'string': ir.PointerType(ir.IntType(8))
-        }
-
         self.declared_classes: dict[str, Any] = {}
 
         # Initialize the main module
@@ -61,30 +55,10 @@ class Compiler:
         self.let_node: Optional[LetStatement] = None
 
     def initialize_builtins(self):
-        def init_print() -> ir.Function:
-            fnty: ir.FunctionType = ir.FunctionType(
-                self.type_map['int'],
-                [ir.IntType(8).as_pointer()],
-                var_arg=True
-            )
-            return ir.Function(self.module, fnty, 'printf')
-
-        def init_booleans() -> tuple[ir.GlobalVariable, ir.GlobalVariable]:
-            bool_type: ir.Type = self.type_map['bool']
-
-            true_var = ir.GlobalVariable(self.module, bool_type, 'true')
-            true_var.initializer = ir.Constant(bool_type, 1)
-            true_var.global_constant = True
-
-            false_var = ir.GlobalVariable(self.module, bool_type, 'false')
-            false_var.initializer = ir.Constant(bool_type, 0)
-            false_var.global_constant = True
-
-            return true_var, false_var
+        self.env.define('print', builtins.init_print(self.module), ir.IntType(32))
+        self.env.define('scan', builtins.init_scanf(self.module), ir.IntType(32))
         
-        self.env.define('print', init_print(), ir.IntType(32))
-        
-        true_var, false_var = init_booleans()
+        true_var, false_var = builtins.init_booleans(self.module)
         self.env.define('true', true_var, true_var.type)
         self.env.define('false', false_var, false_var.type)
 
@@ -158,6 +132,38 @@ class Compiler:
             # Define and allocate the variable
             if node.value_type in self.declared_classes.keys():
                 self.env.define(name, value_, Type)
+            elif node.value_type == 'string':
+                max_string_length = 256  # Choose a reasonable maximum length
+                string_type = ir.ArrayType(ir.IntType(8), max_string_length)
+                # Allocate space on the stack for the string buffer
+                buffer_ptr = self.builder.alloca(string_type)
+                self.env.define(name, buffer_ptr, Type) # Store the pointer to the buffer
+
+                # If there's an initial value, store it in the buffer (optional)
+                if isinstance(value, StringLiteral) and value.value:
+                    encoded_value = (value.value.encode('utf-8') + b'\0')[:max_string_length]
+                    initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len(encoded_value)), bytearray(encoded_value))
+                    # Create a global constant for the initial value
+                    global_init = ir.GlobalVariable(self.module, initializer.type, name + "_init")
+                    global_init.initializer = initializer
+                    global_init.global_constant = True
+                    # Copy the initial value to the allocated buffer
+                    src_ptr = global_init.gep((ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)))
+                    dst_ptr = buffer_ptr.gep((ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)))
+                    # You'll likely need a loop or a runtime function to copy the memory safely
+                    # For now, we might skip initial value for empty string case
+                    if value.value:
+                        # This is a simplified approach and might need a more robust memory copy
+                        for i in range(len(encoded_value)):
+                            element_ptr = dst_ptr.gep(ir.Constant(ir.IntType(32), i))
+                            byte = ir.Constant(ir.IntType(8), encoded_value[i])
+                            self.builder.store(byte, element_ptr)
+                        # Null-terminate explicitly if the initial value was shorter than max_length
+                        if len(encoded_value) < max_string_length:
+                            null_ptr = dst_ptr.gep(ir.Constant(ir.IntType(32), len(encoded_value)))
+                            null_byte = ir.Constant(ir.IntType(8), 0)
+                            self.builder.store(null_byte, null_ptr)
+
             else:
                 ptr = self.builder.alloca(Type)
                 self.builder.store(value_, ptr)
@@ -168,7 +174,7 @@ class Compiler:
 
         self.is_let = False
         self.let_node = None
-
+        
     def visit_const_statement(self, node: ConstStatement) -> None:
         name: str = node.name.value
         value: Expression = node.value
@@ -202,9 +208,9 @@ class Compiler:
         param_names: list[str] = [p.name for p in params]
 
         # Keep track of the types for each parameter
-        param_types: list[ir.Type] = [self.type_map[p.value_type] for p in params]
+        param_types: list[ir.Type] = [TYPE_MAP[p.value_type] for p in params]
 
-        return_type: ir.Type = self.type_map[node.return_type]
+        return_type: ir.Type = TYPE_MAP[node.return_type]
 
         fnty = ir.FunctionType(return_type, param_types)
         func = ir.Function(self.module, fnty, name=name)
@@ -247,21 +253,18 @@ class Compiler:
         operator: str = node.operator
         value: Expression = node.right_value
 
+
         if "." in name:
             class_instance_name, attribute_name = name.split(".")
             class_instance, Type = self.env.lookup(class_instance_name)
-            class_name = next((name for name, value_ in self.type_map.items() if value_ == Type))
+            class_name = next((name for name, value_ in TYPE_MAP.items() if value_ == Type))
 
             attribute_index = None
             for i, field in enumerate(self.declared_classes[class_name]["fields"]):
                 if field["name"] == attribute_name:
                     attribute_index = i
 
-            # var_ptr = self.builder.extract_value(class_instance, attribute_index) # Plus un pointeur
-            # orig_value = self.builder.load(var_ptr)
             orig_value = self.builder.extract_value(class_instance, attribute_index)  # Valeur directe
-
-
             right_value, right_type = self.resolve_value(value)
 
             if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
@@ -296,7 +299,6 @@ class Compiler:
                 case _:
                     print("Unsupported Assignment Operator")
 
-            # self.builder.insert_value(class_instance, value, attribute_index) # Pas besoin de stocker dans un pointeur
             updated_instance = self.builder.insert_value(class_instance, value, attribute_index) # Insère la nouvelle valeur
             self.env.define(class_instance_name, updated_instance, Type) # Et on remplace l'instance dans l'environment
         else:
@@ -486,9 +488,9 @@ class Compiler:
         param_names: list[str] = ["self"] + [p.name for p in params]
 
         # Keep track of the types for each parameter
-        param_types: list[ir.Type] = [class_type] + [self.type_map[p.value_type] for p in params]
+        param_types: list[ir.Type] = [class_type] + [TYPE_MAP[p.value_type] for p in params]
 
-        return_type: ir.Type = self.type_map[node.return_type]
+        return_type: ir.Type = TYPE_MAP[node.return_type]
 
         fnty = ir.FunctionType(return_type, param_types)
         func = ir.Function(self.module, fnty, name=f"{class_type.name}_{name}")
@@ -533,15 +535,15 @@ class Compiler:
             # Création du type de classe
             class_type = self.module.context.get_identified_type(class_name)
             class_type.set_body(
-                *[self.type_map[field.value_type] for field in fields]
+                *[TYPE_MAP[field.value_type] for field in fields]
             )
 
-            self.type_map[class_name] = class_type
+            TYPE_MAP[class_name] = class_type
             self.declared_classes[class_name] = {
                 "fields": [
                     {
                         "name": field.name.value,
-                        "type": self.type_map[field.value_type]
+                        "type": TYPE_MAP[field.value_type]
                     } for field in fields
                 ]
             }
@@ -564,7 +566,7 @@ class Compiler:
                 # Initialiser une structure vide
                 instance = ir.Constant(class_type, None)  # ⬅️ Instance vide
                 for i, field in enumerate(fields):
-                    field_type = self.type_map[field.value_type]
+                    field_type = TYPE_MAP[field.value_type]
                     if isinstance(field_type, ir.FloatType):
                         default_value = ir.Constant(field_type, float(field_type.null))
                     else:
@@ -613,7 +615,7 @@ class Compiler:
                 right_type = left_type
             
             if isinstance(left_type, ir.IntType) and isinstance(right_type, ir.IntType):
-                Type = self.type_map['int']
+                Type = TYPE_MAP['int']
                 match operator:
                     case '+': value = self.builder.add(left_value, right_value)
                     case '-': value = self.builder.sub(left_value, right_value)
@@ -659,8 +661,31 @@ class Compiler:
                 types.append(p_type)
 
         if name == "print":
-            ret = self.builtin_printf(params=args, return_type=types[0])
-            ret_type = self.type_map['int']
+            ret = builtins.builtin_printf(
+                env=self.env, builder=self.builder, module=self.module, 
+                counter=self.counter, params=args, return_type=types[0]
+            )
+            ret_type = TYPE_MAP['int']
+        elif name == "scan":
+            scan_args = []
+            for i, arg in enumerate(args):
+                if i == 0: # The format string
+                    scan_args.append(arg)
+                else:
+                    # Get the name of the variable from the IdentifierLiteral node
+                    if isinstance(params[i], IdentifierLiteral):
+                        var_name = params[i].value
+                        print(f"Looking for variable '{var_name}' in environment:") # Debug print
+                        ptr = self.get_pointer_to_local_variable(var_name)
+                        scan_args.append(ptr)
+                    else:
+                        raise TypeError(f"[line {node.line_no}] COMPILE ERROR: Expected an identifier for scan argument, got {params[i].type()}")
+
+            ret = builtins.builtin_scanf(
+                env=self.env, builder=self.builder, module=self.module,
+                counter=self.counter, params=scan_args
+            )
+            ret_type = TYPE_MAP['int']
         elif name == "init":
             if self.is_let and not self.let_node is None:
                 func_name = f"{self.let_node.value_type}_init"
@@ -673,7 +698,7 @@ class Compiler:
                 self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {name} is not defined.")
                 return
             value, Type = data
-            class_name = next((name for name, value_ in self.type_map.items() if value_ == Type))
+            class_name = next((name for name, value_ in TYPE_MAP.items() if value_ == Type))
             class_method_name = f"{class_name}_{class_method}"
             func, ret_type = self.env.lookup(class_method_name)
             args = [value] + args
@@ -737,24 +762,29 @@ class Compiler:
     # endregion Visit Expression Methods
 
     # region Helper Methods
+    def get_pointer_to_local_variable(self, var_name: str) -> ir.Value:
+        """Helper function to get the pointer to a local variable."""
+        ptr, _ = self.env.lookup(var_name)
+        return ptr
+
     def resolve_value(self, node: Expression, value_type: str = None) -> tuple[ir.Value, ir.Type]:
         """ Resolves a value and returns a tuple (ir_value, ir_type) """
         match node.type():
             # Literals
             case NodeType.IntegerLiteral:
                 node: IntegerLiteral = node
-                value, Type = node.value, self.type_map['int' if value_type is None else value_type]
+                value, Type = node.value, TYPE_MAP['int' if value_type is None else value_type]
                 return ir.Constant(Type, value), Type
             case NodeType.FloatLiteral:
                 node: FloatLiteral = node
-                value, Type = node.value, self.type_map['float' if value_type is None else value_type]
+                value, Type = node.value, TYPE_MAP['float' if value_type is None else value_type]
                 return ir.Constant(Type, value), Type
             case NodeType.IdentifierLiteral:
                 node: IdentifierLiteral = node
                 if "." in node.value:
                     class_instance_name, attribute_name = node.value.split(".")
                     class_instance, Type = self.env.lookup(class_instance_name)
-                    class_name = next((name for name, value_ in self.type_map.items() if value_ == Type))
+                    class_name = next((name for name, value_ in TYPE_MAP.items() if value_ == Type))
 
                     attribute_index = None
                     for i, field in enumerate(self.declared_classes[class_name]["fields"]):
@@ -816,31 +846,5 @@ class Compiler:
         ptr = self.builder.gep(global_fmt, [zero, zero])
 
         return ptr, ir.PointerType(ir.IntType(8))
-
-    def builtin_printf(self, params: list[ir.Instruction], return_type: ir.Type) -> None:
-        """ Basic C builtin printf with float support """
-        func, _ = self.env.lookup('print')
-
-        c_str = self.builder.alloca(return_type)
-        self.builder.store(params[0], c_str)
-
-        rest_params = []
-        for param in params[1:]:
-            if isinstance(param.type, ir.FloatType):
-                # Convertit le float en double pour printf
-                param = self.builder.fpext(param, ir.DoubleType())
-            rest_params.append(param)
-
-        if isinstance(params[0], ir.LoadInstr):
-            """ Printing from a variable load instruction """
-            c_fmt: ir.LoadInstr = params[0]
-            g_var_ptr = c_fmt.operands[0]
-            string_val = self.builder.load(g_var_ptr)
-            fmt_arg = self.builder.bitcast(string_val, ir.IntType(8).as_pointer())
-            return self.builder.call(func, [fmt_arg, *rest_params])
-        else:
-            """ Printing from a normal string declared within printf """
-            fmt_arg = self.builder.bitcast(self.module.get_global(f"__str_{self.counter}"), ir.IntType(8).as_pointer())
-            return self.builder.call(func, [fmt_arg, *rest_params])
     # endregion Helper Methods
     
