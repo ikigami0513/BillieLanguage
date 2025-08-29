@@ -56,7 +56,7 @@ class Compiler:
 
     def initialize_builtins(self):
         self.env.define('print', builtins.init_print(self.module), ir.IntType(32))
-        self.env.define('scan', builtins.init_scanf(self.module), ir.IntType(32))
+        self.env.define('scan', builtins.init_scan(self.module), ir.IntType(32))
         
         true_var, false_var = builtins.init_booleans(self.module)
         self.env.define('true', true_var, true_var.type)
@@ -126,51 +126,45 @@ class Compiler:
         self.let_node = node
         name: str = node.name.value
         value: Expression = node.value
-        value_, Type = self.resolve_value(node=value)
+        
+        value_type_ir = TYPE_MAP[node.value_type]
 
-        if self.env.lookup(name) is None:
-            # Define and allocate the variable
-            if node.value_type in self.declared_classes.keys():
-                self.env.define(name, value_, Type)
-            elif node.value_type == 'string':
-                max_string_length = 256  # Choose a reasonable maximum length
-                string_type = ir.ArrayType(ir.IntType(8), max_string_length)
-                # Allocate space on the stack for the string buffer
-                buffer_ptr = self.builder.alloca(string_type)
-                self.env.define(name, buffer_ptr, Type) # Store the pointer to the buffer
-
-                # If there's an initial value, store it in the buffer (optional)
-                if isinstance(value, StringLiteral) and value.value:
-                    encoded_value = (value.value.encode('utf-8') + b'\0')[:max_string_length]
-                    initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len(encoded_value)), bytearray(encoded_value))
-                    # Create a global constant for the initial value
-                    global_init = ir.GlobalVariable(self.module, initializer.type, name + "_init")
-                    global_init.initializer = initializer
-                    global_init.global_constant = True
-                    # Copy the initial value to the allocated buffer
-                    src_ptr = global_init.gep((ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)))
-                    dst_ptr = buffer_ptr.gep((ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)))
-                    # You'll likely need a loop or a runtime function to copy the memory safely
-                    # For now, we might skip initial value for empty string case
-                    if value.value:
-                        # This is a simplified approach and might need a more robust memory copy
-                        for i in range(len(encoded_value)):
-                            element_ptr = dst_ptr.gep(ir.Constant(ir.IntType(32), i))
-                            byte = ir.Constant(ir.IntType(8), encoded_value[i])
-                            self.builder.store(byte, element_ptr)
-                        # Null-terminate explicitly if the initial value was shorter than max_length
-                        if len(encoded_value) < max_string_length:
-                            null_ptr = dst_ptr.gep(ir.Constant(ir.IntType(32), len(encoded_value)))
-                            null_byte = ir.Constant(ir.IntType(8), 0)
-                            self.builder.store(null_byte, null_ptr)
-
+        if node.value_type in self.declared_classes.keys():
+            value_, _ = self.resolve_value(node=value)
+            if self.env.lookup(name) is None:
+                self.env.define(name, value_, value_type_ir)
             else:
-                ptr = self.builder.alloca(Type)
+                ptr, _ = self.env.lookup(name)
                 self.builder.store(value_, ptr)
-                self.env.define(name, ptr, Type)
+        
+        elif node.value_type == 'string':
+            max_string_length = 256
+            string_array_type = ir.ArrayType(ir.IntType(8), max_string_length)
+            # Allouer un espace sur la pile pour le tableau de caractères
+            buffer_ptr = self.builder.alloca(string_array_type, name=name)
+            # Définir la variable dans l'environnement en tant que pointeur vers le tableau
+            self.env.define(name, buffer_ptr, buffer_ptr.type)
+
+            if isinstance(value, StringLiteral) and value.value:
+                encoded_value = (value.value.encode('utf-8') + b'\0')[:max_string_length]
+                initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len(encoded_value)), bytearray(encoded_value))
+                global_init = ir.GlobalVariable(self.module, initializer.type, name + "_init")
+                global_init.initializer = initializer
+                global_init.global_constant = True
+
+                # Copier la chaîne de caractères dans le tampon alloué
+                src_ptr = self.builder.bitcast(global_init, ir.PointerType(ir.IntType(8)))
+                dst_ptr = self.builder.gep(buffer_ptr, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                
+                # Utiliser la fonction memcpy de C pour une copie plus robuste
+                init_memcpy = self.module.get_or_insert_function(ir.FunctionType(ir.VoidType(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer(), ir.IntType(32)]), name="memcpy")
+                self.builder.call(init_memcpy, [dst_ptr, src_ptr, ir.Constant(ir.IntType(32), len(encoded_value))])
+            
         else:
-            ptr, _ = self.env.lookup(name)
+            value_, _ = self.resolve_value(node=value)
+            ptr = self.builder.alloca(value_type_ir)
             self.builder.store(value_, ptr)
+            self.env.define(name, ptr, value_type_ir)
 
         self.is_let = False
         self.let_node = None
@@ -253,99 +247,151 @@ class Compiler:
         operator: str = node.operator
         value: Expression = node.right_value
 
-
         if "." in name:
             class_instance_name, attribute_name = name.split(".")
-            class_instance, Type = self.env.lookup(class_instance_name)
-            class_name = next((name for name, value_ in TYPE_MAP.items() if value_ == Type))
+            
+            data_lookup = self.env.lookup(class_instance_name)
+            if data_lookup is None:
+                self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Class instance '{class_instance_name}' is not defined.")
+                return
 
+            class_instance, class_type = data_lookup
+
+            if isinstance(class_instance, ir.AllocaInstr):
+                class_instance = self.builder.load(class_instance)
+            
+            class_name = next((n for n, v in TYPE_MAP.items() if v == class_type), None)
+            if class_name is None:
+                self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Class type for instance '{class_instance_name}' not found.")
+                return
+                
             attribute_index = None
             for i, field in enumerate(self.declared_classes[class_name]["fields"]):
                 if field["name"] == attribute_name:
                     attribute_index = i
+                    break
 
-            orig_value = self.builder.extract_value(class_instance, attribute_index)  # Valeur directe
+            if attribute_index is None:
+                self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Attribute '{attribute_name}' not found in class '{class_name}'.")
+                return
+                
             right_value, right_type = self.resolve_value(value)
 
-            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
-            if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-                right_value = self.builder.sitofp(right_value, ir.FloatType())
+            field_type_in_class = self.declared_classes[class_name]["fields"][attribute_index]["type"]
 
-            value = None
-            match operator:
-                case '=':
-                    value = right_value
-                case '+=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.add(orig_value, right_value)
+            if isinstance(field_type_in_class, ir.PointerType) and isinstance(field_type_in_class.pointee, ir.IntType):
+                # Cas spécifique d'une chaîne de caractères (type i8*)
+                if isinstance(right_type, ir.PointerType) and isinstance(right_type.pointee, ir.IntType):
+                    value_to_assign = right_value
+                elif isinstance(right_type, ir.ArrayType) and isinstance(right_type.element, ir.IntType):
+                    # Si le type résolu est un tableau ([N x i8]), on le convertit en pointeur (i8*)
+                    value_to_assign = self.builder.gep(right_value, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                else:
+                    self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Cannot assign type {right_type} to a string attribute.")
+                    return
+            else:
+                # Gérer les autres types numériques
+                orig_value = self.builder.extract_value(class_instance, attribute_index)
+                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                    orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+                if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                    right_value = self.builder.sitofp(right_value, ir.FloatType())
+                
+                value_to_assign = None
+                if operator == '=':
+                    value_to_assign = right_value
+                elif operator == '+=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_assign = self.builder.add(orig_value, right_value)
                     else:
-                        value = self.builder.fadd(orig_value, right_value)
-                case '-=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.sub(orig_value, right_value)
+                        value_to_assign = self.builder.fadd(orig_value, right_value)
+                elif operator == '-=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_assign = self.builder.sub(orig_value, right_value)
                     else:
-                        value = self.builder.fsub(orig_value, right_value)
-                case '*=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.mul(orig_value, right_value)
+                        value_to_assign = self.builder.fsub(orig_value, right_value)
+                elif operator == '*=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_assign = self.builder.mul(orig_value, right_value)
                     else:
-                        value = self.builder.fmul(orig_value, right_value)
-                case '/=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.sdiv(orig_value, right_value)
+                        value_to_assign = self.builder.fmul(orig_value, right_value)
+                elif operator == '/=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_assign = self.builder.sdiv(orig_value, right_value)
                     else:
-                        value = self.builder.fdiv(orig_value, right_value)
-                case _:
-                    print("Unsupported Assignment Operator")
+                        value_to_assign = self.builder.fdiv(orig_value, right_value)
+                else:
+                    self.errors.append(f"Unsupported Assignment Operator: {operator}")
+                    return
 
-            updated_instance = self.builder.insert_value(class_instance, value, attribute_index) # Insère la nouvelle valeur
-            self.env.define(class_instance_name, updated_instance, Type) # Et on remplace l'instance dans l'environment
+            updated_instance = self.builder.insert_value(class_instance, value_to_assign, attribute_index)
+            self.env.define(class_instance_name, updated_instance, class_type)
         else:
+            # Affectation de variables simples
             if self.env.lookup(name) is None:
                 self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {name} has not been declared before it was re-assigned.")
                 return
 
-            var_ptr, _ = self.env.lookup(name)
-            orig_value = self.builder.load(var_ptr)
+            var_ptr, var_type = self.env.lookup(name)
 
-            right_value, right_type = self.resolve_value(value)
+            if isinstance(value, StringLiteral):
+                # Pour les variables de chaîne, on copie le contenu
+                if not isinstance(var_type.pointee, ir.ArrayType) or not isinstance(var_type.pointee.element, ir.IntType):
+                    self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Cannot assign a string to a non-string variable.")
+                    return
 
-            if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
-                orig_value = self.builder.sitofp(orig_value, ir.FloatType())
-            if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
-                right_value = self.builder.sitofp(right_value, ir.FloatType())
+                encoded_value = (value.value.encode('utf-8') + b'\0')[:var_type.pointee.count]
+                initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len(encoded_value)), bytearray(encoded_value))
 
-            value = None
-            Type = None
-            match operator:
-                case '=':
-                    value = right_value
-                case '+=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.add(orig_value, right_value)
-                    else:
-                        value = self.builder.fadd(orig_value, right_value)
-                case '-=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.sub(orig_value, right_value)
-                    else:
-                        value = self.builder.fsub(orig_value, right_value)
-                case '*=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.mul(orig_value, right_value)
-                    else:
-                        value = self.builder.fmul(orig_value, right_value)
-                case '/=':
-                    if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.IntType):
-                        value = self.builder.sdiv(orig_value, right_value)
-                    else:
-                        value = self.builder.fdiv(orig_value, right_value)
-                case _:
-                    print("Unsupported Assignment Operator")
+                # Créer une variable globale pour la chaîne constante
+                global_init = ir.GlobalVariable(self.module, initializer.type, f"__tmp_str_{self.increment_counter()}")
+                global_init.initializer = initializer
+                global_init.global_constant = True
 
-            ptr, _ = self.env.lookup(name)
-            self.builder.store(value, ptr)
+                # Copier la chaîne globale vers la variable locale
+                src_ptr = self.builder.bitcast(global_init, ir.PointerType(ir.IntType(8)))
+                dst_ptr = self.builder.gep(var_ptr, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                
+                init_memcpy = self.module.get_or_insert_function(ir.FunctionType(ir.VoidType(), [ir.IntType(8).as_pointer(), ir.IntType(8).as_pointer(), ir.IntType(32)]), name="memcpy")
+                self.builder.call(init_memcpy, [dst_ptr, src_ptr, ir.Constant(ir.IntType(32), len(encoded_value))])
+            else:
+                # Gérer les autres types de variables simples
+                orig_value = self.builder.load(var_ptr)
+                right_value, right_type = self.resolve_value(value)
+
+                if isinstance(orig_value.type, ir.IntType) and isinstance(right_type, ir.FloatType):
+                    orig_value = self.builder.sitofp(orig_value, ir.FloatType())
+                if isinstance(orig_value.type, ir.FloatType) and isinstance(right_type, ir.IntType):
+                    right_value = self.builder.sitofp(right_value, ir.FloatType())
+
+                value_to_store = None
+                if operator == '=':
+                    value_to_store = right_value
+                elif operator == '+=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_store = self.builder.add(orig_value, right_value)
+                    else:
+                        value_to_store = self.builder.fadd(orig_value, right_value)
+                elif operator == '-=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_store = self.builder.sub(orig_value, right_value)
+                    else:
+                        value_to_store = self.builder.fsub(orig_value, right_value)
+                elif operator == '*=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_store = self.builder.mul(orig_value, right_value)
+                    else:
+                        value_to_store = self.builder.fmul(orig_value, right_value)
+                elif operator == '/=':
+                    if isinstance(orig_value.type, ir.IntType):
+                        value_to_store = self.builder.sdiv(orig_value, right_value)
+                    else:
+                        value_to_store = self.builder.fdiv(orig_value, right_value)
+                else:
+                    self.errors.append(f"Unsupported Assignment Operator: {operator}")
+                    return
+
+                self.builder.store(value_to_store, var_ptr)
 
     def visit_if_statement(self, node: IfStatement) -> None:
         condition = node.condition
@@ -654,6 +700,38 @@ class Compiler:
 
         args = []
         types = []
+        
+        if name == "scan":
+            fmt_arg, fmt_type = self.resolve_value(params[0])
+            args.append(fmt_arg)
+            types.append(fmt_type)
+
+            for x in params[1:]:
+                if not isinstance(x, IdentifierLiteral):
+                    self.errors.append(f"[line {node.line_no}] COMPILE ERROR: scan requires a variable as an argument.")
+                    return None, None
+                
+                # Récupérer le pointeur vers la variable
+                p_val = self.get_pointer_to_local_variable(x.value)
+                p_type = self.get_type_of_variable(x.value)
+                
+                # AJOUT DE LA LIGNE DE CODE POUR CONVERTIR LE POINTEUR
+                if isinstance(p_type, ir.PointerType) and isinstance(p_type.pointee, ir.ArrayType):
+                    # Bitcast le pointeur du tableau en un pointeur de caractère générique (i8*)
+                    p_val = self.builder.bitcast(p_val, ir.PointerType(ir.IntType(8)))
+                    p_type = ir.PointerType(ir.IntType(8))
+                
+                args.append(p_val)
+                types.append(p_type)
+
+            ret = builtins.builtin_scanf(
+                env=self.env, builder=self.builder, module=self.module,
+                counter=self.counter, params=args, return_type=types[0]
+            )
+            ret_type = TYPE_MAP['int']
+            return ret, ret_type
+
+        # Cas général pour les autres fonctions
         if len(params) > 0:
             for x in params:
                 p_val, p_type = self.resolve_value(x)
@@ -666,39 +744,21 @@ class Compiler:
                 counter=self.counter, params=args, return_type=types[0]
             )
             ret_type = TYPE_MAP['int']
-        elif name == "scan":
-            scan_args = []
-            for i, arg in enumerate(args):
-                if i == 0: # The format string
-                    scan_args.append(arg)
-                else:
-                    # Get the name of the variable from the IdentifierLiteral node
-                    if isinstance(params[i], IdentifierLiteral):
-                        var_name = params[i].value
-                        print(f"Looking for variable '{var_name}' in environment:") # Debug print
-                        ptr = self.get_pointer_to_local_variable(var_name)
-                        scan_args.append(ptr)
-                    else:
-                        raise TypeError(f"[line {node.line_no}] COMPILE ERROR: Expected an identifier for scan argument, got {params[i].type()}")
 
-            ret = builtins.builtin_scanf(
-                env=self.env, builder=self.builder, module=self.module,
-                counter=self.counter, params=scan_args
-            )
-            ret_type = TYPE_MAP['int']
         elif name == "init":
             if self.is_let and not self.let_node is None:
                 func_name = f"{self.let_node.value_type}_init"
                 func, ret_type = self.env.lookup(func_name)
                 ret = self.builder.call(func, args)
+
         elif "." in name:
             class_instance, class_method = name.split(".")
             data = self.env.lookup(class_instance)
             if data is None:
                 self.errors.append(f"[line {node.line_no}] COMPILE ERROR: Identifier {name} is not defined.")
-                return
+                return None, None
             value, Type = data
-            class_name = next((name for name, value_ in TYPE_MAP.items() if value_ == Type))
+            class_name = next((n for n, v in TYPE_MAP.items() if v == Type), None)
             class_method_name = f"{class_name}_{class_method}"
             func, ret_type = self.env.lookup(class_method_name)
             args = [value] + args
@@ -708,6 +768,21 @@ class Compiler:
             ret = self.builder.call(func, args)
 
         return ret, ret_type
+
+    def get_pointer_to_local_variable(self, var_name: str) -> ir.Value:
+        """Helper function to get the pointer to a local variable."""
+        ptr, _ = self.env.lookup(var_name)
+        return ptr
+
+    def get_type_of_variable(self, var_name: str) -> ir.Type:
+        """Helper function to get the type of a local variable."""
+        _, var_type = self.env.lookup(var_name)
+        return var_type
+    
+    def get_pointer_to_local_variable(self, var_name: str) -> ir.Value:
+        """Helper function to get the pointer to a local variable."""
+        ptr, _ = self.env.lookup(var_name)
+        return ptr
     
     def visit_prefix_expression(self, node: PrefixExpression) -> tuple[ir.Value, ir.Type]:
         operator: str = node.operator
@@ -808,9 +883,14 @@ class Compiler:
                         print(f"[line {node.line_no}] {node.value} is not defined.")
                         sys.exit()
                     ptr, Type = data
-
-                    if isinstance(Type, ir.IdentifiedStructType): # Si c'est une classe
-                        return ptr, Type  # Retourner la valeur directement, pas un pointeur
+                    
+                    # Correction: si le type est un pointeur vers un tableau (string),
+                    # il faut renvoyer le pointeur vers le premier élément du tableau
+                    if isinstance(Type, ir.PointerType) and isinstance(Type.pointee, ir.ArrayType) and isinstance(Type.pointee.element, ir.IntType) and Type.pointee.element.width == 8:
+                        return self.builder.gep(ptr, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)]), ir.PointerType(ir.IntType(8))
+                    
+                    if isinstance(Type, ir.IdentifiedStructType):
+                        return ptr, Type
                     else:
                         return self.builder.load(ptr), Type
             case NodeType.BooleanLiteral:

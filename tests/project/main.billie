@@ -15,10 +15,10 @@ class Person {
 }
 
 function main() -> int {
-    let person: Person = init();
-    print("Your name ?\n");
+    print("Enter your name :");
     let name: string = "";
     scan("%s", name);
+    let person: Person = init();
     person.first_name = name;
     person.last_name = "Rucar";
     person.age = 21;

@@ -1,6 +1,7 @@
 from llvmlite import ir
 from billie.compiler.types import TYPE_MAP
 from billie.environment import Environment
+from typing import List
 
 
 # region printf function
@@ -43,8 +44,8 @@ def builtin_printf(env: Environment, builder: ir.IRBuilder, module: ir.Module, c
 
 
 # region scanf function
-def init_scanf(module: ir.Module) -> ir.Function:
-    fnty: ir.FunctionType = ir.FunctionType(
+def init_scan(module: ir.Module) -> ir.Function:
+    fnty = ir.FunctionType(
         TYPE_MAP['int'],
         [ir.IntType(8).as_pointer()],
         var_arg=True
@@ -52,29 +53,25 @@ def init_scanf(module: ir.Module) -> ir.Function:
     return ir.Function(module, fnty, 'scanf')
 
 
-def builtin_scanf(env: Environment, builder: ir.IRBuilder, module: ir.Module, counter: int, params: list[ir.Instruction]) -> None:
+def builtin_scanf(env: Environment, builder: ir.IRBuilder, module: ir.Module, counter: int, params: List[ir.Instruction], return_type: ir.Type) -> ir.Instruction:
     func, _ = env.lookup('scan')
 
-    fmt_arg = None
-    if isinstance(params[0], ir.LoadInstr):
-        # Scanning from a variable load instruction for the format string
-        c_fmt: ir.LoadInstr = params[0]
-        if isinstance(c_fmt.type, ir.PointerType) and isinstance(c_fmt.type.pointee, ir.ArrayType) and c_fmt.type.pointee.element == ir.IntType(8):
-            g_var_ptr = c_fmt.operands[0]
-            string_val = builder.load(g_var_ptr)
-            fmt_arg = builder.bitcast(string_val, ir.IntType(8).as_pointer())
+    rest_params = []
+    for param in params[1:]:
+        if isinstance(param.type, ir.PointerType) and isinstance(param.type.pointee, ir.FloatType):
+            rest_params.append(param)
+        elif isinstance(param.type, ir.PointerType) and isinstance(param.type.pointee, ir.IntType):
+            rest_params.append(param)
+        elif isinstance(param.type, ir.PointerType) and isinstance(param.type.pointee, ir.IntType):
+            rest_params.append(param)
         else:
-            raise ValueError("Format string for scan is not an i8*")
-    else:
+            # Traiter les autres types si nécessaire
+            raise TypeError(f"Unsupported type for scanf: {param.type}")
+        
+        # Le premier paramètre est la chaîne de format. On la récupère et on la bitcast.
         fmt_arg = builder.bitcast(module.get_global(f"__str_{counter}"), ir.IntType(8).as_pointer())
 
-    scan_args = []
-    for i, param in enumerate(params[1:]):
-        print(f"Param for scan: {param}, Type: {param.type}")
-        scan_args.append(param) # Directly use the pointer to the variable
-
-    builder.call(func, [fmt_arg, *scan_args])
-# endregion scanf function
+        return builder.call(func, [fmt_arg, *rest_params])
 
 
 # region booleans

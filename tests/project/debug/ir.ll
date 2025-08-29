@@ -45,35 +45,29 @@ Person_greet_entry:
 define i64 @"main"()
 {
 main_entry:
-  %".2" = call %"Person" @"Person_init"()
-  %".3" = getelementptr [14 x i8], [14 x i8]* @"__str_3", i32 0, i32 0
-  %".4" = alloca i8*
-  store i8* %".3", i8** %".4"
-  %".6" = bitcast [14 x i8]* @"__str_3" to i8*
-  %".7" = call i64 (i8*, ...) @"printf"(i8* %".6")
-  %".8" = getelementptr [1 x i8], [1 x i8]* @"__str_4", i32 0, i32 0
-  %".9" = alloca i8*
-  store i8* getelementptr ([1 x i8], [1 x i8]* @"name_str", i32 0, i32 0), i8** %".9"
-  %".11" = getelementptr [3 x i8], [3 x i8]* @"__str_5", i32 0, i32 0
-  %".12" = load i8*, i8** %".9"
-  %".13" = bitcast [3 x i8]* @"__str_5" to i8*
-  %".14" = call i64 (i8*, ...) @"scanf"(i8* %".13", i8* %".12")
-  %".15" = extractvalue %"Person" %".2", 0
-  %".16" = load i8*, i8** %".9"
-  %".17" = insertvalue %"Person" %".2", i8* %".16", 0
-  %".18" = extractvalue %"Person" %".17", 1
-  %".19" = getelementptr [6 x i8], [6 x i8]* @"__str_6", i32 0, i32 0
-  %".20" = insertvalue %"Person" %".17", i8* %".19", 1
-  %".21" = extractvalue %"Person" %".20", 2
-  %".22" = insertvalue %"Person" %".20", i64 21, 2
-  %".23" = getelementptr [6 x i8], [6 x i8]* @"__str_7", i32 0, i32 0
-  call void @"Person_greet"(%"Person" %".22", i8* %".23")
+  %".2" = getelementptr [18 x i8], [18 x i8]* @"__str_3", i32 0, i32 0
+  %".3" = alloca i8*
+  store i8* %".2", i8** %".3"
+  %".5" = bitcast [18 x i8]* @"__str_3" to i8*
+  %".6" = call i64 (i8*, ...) @"printf"(i8* %".5")
+  %"name" = alloca [256 x i8]
+  %".7" = getelementptr [3 x i8], [3 x i8]* @"__str_4", i32 0, i32 0
+  %".8" = bitcast [256 x i8]* %"name" to i8*
+  %".9" = bitcast [3 x i8]* @"__str_4" to i8*
+  %".10" = call i64 (i8*, ...) @"scanf"(i8* %".9", i8* %".8")
+  %".11" = call %"Person" @"Person_init"()
+  %".12" = getelementptr [256 x i8], [256 x i8]* %"name", i32 0, i32 0
+  %".13" = insertvalue %"Person" %".11", i8* %".12", 0
+  %".14" = getelementptr [6 x i8], [6 x i8]* @"__str_5", i32 0, i32 0
+  %".15" = insertvalue %"Person" %".13", i8* %".14", 1
+  %".16" = extractvalue %"Person" %".15", 2
+  %".17" = insertvalue %"Person" %".15", i64 21, 2
+  %".18" = getelementptr [6 x i8], [6 x i8]* @"__str_6", i32 0, i32 0
+  call void @"Person_greet"(%"Person" %".17", i8* %".18")
   ret i64 0
 }
 
-@"__str_3" = internal constant [14 x i8] c"Your name ?\0a\00\00"
-@"__str_4" = internal constant [1 x i8] c"\00"
-@"name_str" = constant [1 x i8] c"\00"
-@"__str_5" = internal constant [3 x i8] c"%s\00"
-@"__str_6" = internal constant [6 x i8] c"Rucar\00"
-@"__str_7" = internal constant [6 x i8] c"Hello\00"
+@"__str_3" = internal constant [18 x i8] c"Enter your name :\00"
+@"__str_4" = internal constant [3 x i8] c"%s\00"
+@"__str_5" = internal constant [6 x i8] c"Rucar\00"
+@"__str_6" = internal constant [6 x i8] c"Hello\00"

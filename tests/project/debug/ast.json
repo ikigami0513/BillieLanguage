@@ -123,22 +123,6 @@
                     "type": "BlockStatement",
                     "statements": [
                         {
-                            "type": "LetStatement",
-                            "name": {
-                                "type": "IdentifierLiteral",
-                                "value": "person"
-                            },
-                            "value": {
-                                "type": "CallExpression",
-                                "function": {
-                                    "type": "IdentifierLiteral",
-                                    "value": "init"
-                                },
-                                "arguments": []
-                            },
-                            "value_type": "Person"
-                        },
-                        {
                             "type": "ExpressionStatement",
                             "expr": {
                                 "type": "CallExpression",
@@ -149,7 +133,7 @@
                                 "arguments": [
                                     {
                                         "type": "StringLiteral",
-                                        "value": "Your name ?\\n"
+                                        "value": "Enter your name :"
                                     }
                                 ]
                             }
@@ -185,6 +169,22 @@
                                     }
                                 ]
                             }
+                        },
+                        {
+                            "type": "LetStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "person"
+                            },
+                            "value": {
+                                "type": "CallExpression",
+                                "function": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "init"
+                                },
+                                "arguments": []
+                            },
+                            "value_type": "Person"
                         },
                         {
                             "type": "AssignStatement",
